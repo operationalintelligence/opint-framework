@@ -1,0 +1,32 @@
+[flake8]
+
+select = A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z
+
+#ignore = E121,E123,E126,E133,E226,E241,E242,E704,W503,W504,W505  ## default ignore list
+
+## usefull codes to include: E241,E242,E704,W504
+ignore = E121,E123,E126,E133,E226,W503
+
+extend_ignore =
+    # E262, E265: inline/block comment should start with '# '
+    E262, E265,
+    # E266: too many leading '#' for block comment
+    E266,
+    # E401: multiple imports on one line
+    # E402: module level import not at top of file
+    E401,E402,
+    # N804: first argument of a classmethod should be named 'cls' -- unportable cosmetic
+    N804,
+    # C408: Unnecessary (dict/list/tuple) call - rewrite as a literal. -- it leads to more chars in syntax
+    C408,
+    # C812: missing trailing comma
+    C812,C813,C816,
+    # C818: trailing comma on bare tuple prohibited -- it breaks python2 'print' statements.. fix and enable later
+    C818,
+
+max-line-length = 160
+max-complexity = 15
+
+statistics = True
+count = True
+show-source = true

@@ -1,0 +1,27 @@
+image: gitlab-registry.cern.ch/ci-tools/ci-worker:cc7
+ 
+stages:
+  - check
+
+.base_code_check:
+  stage: check
+  image: python:3.7
+  before_script:
+    - pwd
+    - date
+    - uname -a
+    - python --version
+    - pip install flake8 pep8-naming flake8-commas flake8-comprehensions
+    - pip freeze
+    - flake8 --version
+
+code_check_current:
+  extends: .base_code_check
+  script:
+    - . check_code.sh --last-commit
+
+code_check_all:
+  extends: .base_code_check
+  script:
+    - . check_code.sh --all
+  allow_failure: true
