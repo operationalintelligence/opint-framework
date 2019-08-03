@@ -51,7 +51,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'rucio_opint_backend.apps.core',
+    'rucio_opint_backend.apps.api',
     'rucio_opint_backend.apps.crons',
     'rucio_opint_backend.apps.utils'
 ]
