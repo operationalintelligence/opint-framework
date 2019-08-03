@@ -51,7 +51,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rucio_opint_backend.apps.core'
+    'rucio_opint_backend.apps.core',
+    'rucio_opint_backend.apps.crons'
 ]
 
 MIDDLEWARE = [

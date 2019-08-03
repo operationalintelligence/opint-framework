@@ -1,4 +1,5 @@
 django
 djangorestframework
 django-model-utils
+requests
 flake8
