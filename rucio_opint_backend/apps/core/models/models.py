@@ -5,6 +5,29 @@ ISSUE_STATUS = Choices('New', 'Ongoing', 'Resolved')
 SITE_OPTIONS = Choices('src_site', 'dst_site', 'unknown')
 
 
+class IssueCause(models.Model):
+    """
+    Rucio IssueCause object.
+    """
+
+    cause = models.CharField(max_length=128, unique=True)
+    last_modified = models.DateTimeField(auto_now=True)
+
+
+class IssueCategory(models.Model):
+    """
+    Rucio IssueCategory object.
+    """
+
+    amount = models.IntegerField(null=True, default=0)
+    regex = models.CharField(max_length=512)
+    cause = models.ForeignKey(IssueCause, null=True, on_delete=models.PROTECT)
+    last_modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = (('regex', 'cause'),)
+
+
 class Issue(models.Model):
     """
     Rucio Issue object.
@@ -14,7 +37,7 @@ class Issue(models.Model):
     src_site = models.CharField(max_length=128)
     dst_site = models.CharField(max_length=128)
 
-    category = models.ForeignKey(IssueCategory)
+    category = models.ForeignKey(IssueCategory, null=True, on_delete=models.PROTECT)
 
     amount = models.IntegerField(null=True, default=0)
     type = models.CharField(max_length=128)
@@ -25,28 +48,6 @@ class Issue(models.Model):
     class Meta:
         unique_together = (('message', 'src_site', 'dst_site'), )
 
-
-class IssueCategory(models.Model):
-    """
-    Rucio IssueCategory object.
-    """
-
-    amount = models.IntegerField(null=True, default=0)
-    regex = models.CharField(max_length=512)
-    cause = models.ForeignKey(IssueCause)
-    last_modified = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = (('regex', 'reason'),)
-
-
-class IssueCause(models.Model):
-    """
-    Rucio IssueCause object.
-    """
-
-    cause = models.CharField(max_length=128, unique=True)
-    last_modified = models.DateTimeField(auto_now=True)
 
 class Action(models.Model):
     """
@@ -62,10 +63,10 @@ class Solution(models.Model):
     Solution object.
     """
 
-    category = models.ForeignKey(IssueCategory)
-    proposed_action = models.ForeignKey(Action)
-    solution = models.ForeignKey(Action)
-    real_cause = models.ForeignKey(IssueCause)
+    category = models.ForeignKey(IssueCategory, on_delete=models.PROTECT)
+    proposed_action = models.ForeignKey(Action, null=True, on_delete=models.PROTECT, related_name='proposed_action')
+    solution = models.ForeignKey(Action, on_delete=models.PROTECT, related_name='solution_action')
+    real_cause = models.ForeignKey(IssueCause, null=True, on_delete=models.PROTECT)
     propability = models.FloatField(default=0, blank=True)
     score = models.BooleanField(default=False)
 

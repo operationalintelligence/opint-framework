@@ -25,6 +25,12 @@ cd ~/projects/journal
 pip install -r requirements.txt
 ```
 
+Create DB:
+```commandline
+python manage.py makemigrations core
+python manage.py migrate
+```
+
 ## Running the app:
 Navigate to the project's directory:
 ```commandline

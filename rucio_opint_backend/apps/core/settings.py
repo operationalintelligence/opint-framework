@@ -11,6 +11,20 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+import sys
+
+MIGRATIONS_STORE_MODULE = 'migrations'
+MIGRATIONS_STORE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Load local configuration
+try:
+    from settings_local import config, DEBUG
+    DEBUG = str(os.environ.get('DJANGO_DEBUG', DEBUG)).lower() in ['true', '1']
+    vars().update(config)
+except ImportError as e:
+    msg = "File settings_local.py not found or incomplete.\nError: %s" % e
+    print('sys.path=', sys.path, 'PWD=', os.getcwd())
+    raise Exception(msg)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rucio_opint_backend.apps.core'
 ]
 
 MIDDLEWARE = [
@@ -68,18 +83,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'rucio_opint_backend.apps.core.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -118,3 +121,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+MIGRATION_MODULES_LIST = ['core']
+MIGRATION_MODULES = {}
+MIGRATION_MODULES.update(dict([k, '%s.%s' % (MIGRATIONS_STORE_MODULE, k)] for k in MIGRATION_MODULES_LIST))
+
+## check MIGRATIONS data dir
+if '.' not in MIGRATIONS_STORE_MODULE and MIGRATIONS_STORE_MODULE:  ## create directory structure if need
+    m = os.path.join(MIGRATIONS_STORE_PATH, MIGRATIONS_STORE_MODULE)
+    if m and not os.path.exists(m):
+        print(' ... prepare directory structure for MIGRATION files: MIGRATIONS_STORE_MODULE=%s, MIGRATIONS_STORE_PATH=%s'
+              % (MIGRATIONS_STORE_MODULE, MIGRATIONS_STORE_PATH))
+        os.makedirs(m, 0o755)
+    pp = os.path.join(m, '__init__.py')
+    if not os.path.exists(pp):
+        with open(pp, 'a'):
+            os.utime(pp, None)
+        del m, pp
