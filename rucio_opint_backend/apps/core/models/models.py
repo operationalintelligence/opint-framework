@@ -65,7 +65,7 @@ class Solution(models.Model):
 
     category = models.ForeignKey(IssueCategory, on_delete=models.PROTECT)
     proposed_action = models.ForeignKey(Action, null=True, on_delete=models.PROTECT, related_name='proposed_action')
-    solution = models.ForeignKey(Action, on_delete=models.PROTECT, related_name='solution_action')
+    solution = models.ForeignKey(Action, null=True, on_delete=models.PROTECT, related_name='solution_action')
     real_cause = models.ForeignKey(IssueCause, null=True, on_delete=models.PROTECT)
     propability = models.FloatField(default=0, blank=True)
     score = models.BooleanField(default=False)

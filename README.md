@@ -31,6 +31,11 @@ python manage.py makemigrations core
 python manage.py migrate
 ```
 
+Populate DB with initial data:
+```commandline
+python manage.py loaddata initial
+```
+
 ## Running the app:
 Navigate to the project's directory:
 ```commandline
