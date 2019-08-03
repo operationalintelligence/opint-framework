@@ -27,8 +27,10 @@ class Command(BaseCommand):
 
     # function to retrieve inefficient transfers between sites, or ineffecient deletion on a destination site.
     def read_efficiency(self, activity, **kwargs):
-        URL = 'https://monit-grafana.cern.ch/api/datasources/proxy/7730/query?db=monit_production_ddm_transfers&q=SELECT%20sum(files_done),sum(files_total)%20FROM%20%22raw%22.%2F%5Eddm_transfer%24%2F%20WHERE%20%22state%22%20%3D%20%27{}%27%20AND%20time%20%3E%3D%20now()%20-%201h%20GROUP%20BY%20%22src_experiment_site%22%2C%20%22dst_experiment_site%22&epoch=ms'.format(
-            activity)
+        URL = 'https://monit-grafana.cern.ch/api/datasources/proxy/7730/query?db=monit_production_ddm_transfers' \
+              '&q=SELECT%20sum(files_done),sum(files_total)%20FROM%20%22raw%22.%2F%5Eddm_transfer%24%2F%20WHERE%20%22' \
+              'state%22%20%3D%20%27{}%27%20AND%20time%20%3E%3D%20now()%20-%201h%20GROUP%20BY%20%22' \
+              'src_experiment_site%22%2C%20%22dst_experiment_site%22&epoch=ms'.format(activity)
         r = requests.get(URL, headers=kwargs.get('header'))
         result = []
         if r.status_code == 200:
@@ -41,7 +43,8 @@ class Command(BaseCommand):
         else:
             print('could not read efficiency')
 
-    # function that populates the error table with errors that cause a significant inefficiency between certain sites, this function should be run as a cron job and should run once every hour
+    # function that populates the error table with errors that cause a significant inefficiency between certain sites,
+    # this function should be run as a cron job and should run once every hour
     def populate(self):
         for activity in ['transfer', 'deletion']:
             header = {'Authorization': 'Bearer %s' % getattr(settings, 'API_KEY', None)}
@@ -104,4 +107,3 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Importing Rucio error data from monit-grafana")
         self.populate()
-
