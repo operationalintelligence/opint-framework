@@ -1,8 +1,12 @@
+import time
+import requests
+
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-import time
-import requests
+from rucio_opint_backend.apps.core.models import Issue, IssueCategory
+from rucio_opint_backend.apps.utils.categorizer import categorize_issue
+
 
 class Command(BaseCommand):
     help = 'Runs the Rucio fetching job'
@@ -65,13 +69,39 @@ class Command(BaseCommand):
 
                 issue = {
                     'message': resp['responses'][0]['aggregations']['2']['buckets'][0]['key'],
-                    'count': resp['responses'][0]['aggregations']['2']['buckets'][0]['doc_count'],
+                    'amount': resp['responses'][0]['aggregations']['2']['buckets'][0]['doc_count'],
                     'dst_site': link[sites][1]['dst_experiment_site'],
-                    'src_site': link[sites][1]['src_experiment_site']
+                    'src_site': link[sites][1]['src_experiment_site'],
+                    'type': activity + '-failure'
                 }
-                print("Will import ", issue)
+                self.register_issue(issue)
+
+    def register_issue(self, issue):
+        print("INFO: registering issue ", issue)
+        obj, created = Issue.objects.get_or_create(message=issue.pop('message'),
+                                                   src_site=issue.pop('src_site'),
+                                                   dst_site=issue.pop('dst_site'),
+                                                   type=issue.pop('type'),
+                                                   defaults=issue)
+        if not created:
+            obj.last_modified = time.time()
+            obj.save(update_fields=['last_modified'])
+            # return
+        category = categorize_issue(obj)
+        print(obj)
+        if not category:
+            print("INFO: creating new category")
+            category = IssueCategory(regex=obj.message, amount=obj.amount)
+            category.save()
+        else:
+            print("INFO: assigning to existing category")
+            category.amount += obj.amount
+            category.save(update_fields=['amount'])
+
+        obj.category = category
+        obj.save(update_fields=['category'])
 
     def handle(self, *args, **options):
-        print("Importing Rucio error data form monit-grafana")
+        print("Importing Rucio error data from monit-grafana")
         self.populate()
 

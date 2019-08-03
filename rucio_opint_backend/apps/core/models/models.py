@@ -46,7 +46,7 @@ class Issue(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = (('message', 'src_site', 'dst_site'), )
+        unique_together = (('message', 'src_site', 'dst_site', 'type'), )
 
 
 class Action(models.Model):
