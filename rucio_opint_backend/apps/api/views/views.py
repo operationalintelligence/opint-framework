@@ -1,8 +1,9 @@
 from rest_framework import viewsets
 
-from rucio_opint_backend.apps.core.models import Issue, IssueCause, Action
+from rucio_opint_backend.apps.core.models import Issue, IssueCause, Action, IssueCategory, Solution
 
-from rucio_opint_backend.apps.api.serializers import IssueSerializer, IssueCauseSerializer, ActionSerializer
+from rucio_opint_backend.apps.api.serializers import (IssueSerializer, IssueCauseSerializer, ActionSerializer,
+                                                      IssueCategorySerializer, SolutionSerializer)
 
 
 class IssueViewSet(viewsets.ModelViewSet):
@@ -27,3 +28,19 @@ class ActionViewSet(viewsets.ModelViewSet):
     """
     queryset = Action.objects.all()
     serializer_class = ActionSerializer
+
+
+class IssueCategoryViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows Issues to be viewed or edited.
+    """
+    queryset = IssueCategory.objects.all().order_by('-last_modified')
+    serializer_class = IssueCategorySerializer
+
+
+class SolutionViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows Issues to be viewed or edited.
+    """
+    queryset = Solution.objects.all()
+    serializer_class = SolutionSerializer
