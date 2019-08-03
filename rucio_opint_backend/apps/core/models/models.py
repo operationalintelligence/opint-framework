@@ -13,6 +13,9 @@ class IssueCause(models.Model):
     cause = models.CharField(max_length=128, unique=True)
     last_modified = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.cause
+
 
 class IssueCategory(models.Model):
     """
@@ -26,6 +29,9 @@ class IssueCategory(models.Model):
 
     class Meta:
         unique_together = (('regex', 'cause'),)
+
+    def __str__(self):
+        return str(self.id)
 
 
 class Issue(models.Model):
@@ -48,6 +54,9 @@ class Issue(models.Model):
     class Meta:
         unique_together = (('message', 'src_site', 'dst_site', 'type'), )
 
+    def __str__(self):
+        return str(self.id)
+
 
 class Action(models.Model):
     """
@@ -56,6 +65,9 @@ class Action(models.Model):
 
     action = models.CharField(max_length=128, unique=True)
     last_modified = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.action
 
 
 class Solution(models.Model):
@@ -75,3 +87,6 @@ class Solution(models.Model):
 
     class Meta:
         unique_together = (('category', 'solution', 'real_cause', 'affected_site'),)  # TODO: This needs to be verified
+
+    def __str__(self):
+        return str(self.id)
