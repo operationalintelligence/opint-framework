@@ -142,3 +142,9 @@ if '.' not in MIGRATIONS_STORE_MODULE and MIGRATIONS_STORE_MODULE:  ## create di
         with open(pp, 'a'):
             os.utime(pp, None)
         del m, pp
+
+# RestFramework config
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100
+}
