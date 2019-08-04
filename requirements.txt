@@ -3,3 +3,5 @@ djangorestframework
 django-model-utils
 requests
 flake8
+drf-url-filters
+six`

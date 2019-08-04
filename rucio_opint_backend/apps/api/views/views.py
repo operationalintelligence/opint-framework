@@ -1,17 +1,28 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
+from filters.mixins import FiltersMixin
 
 from rucio_opint_backend.apps.core.models import Issue, IssueCause, Action, IssueCategory, Solution
 
 from rucio_opint_backend.apps.api.serializers import (IssueSerializer, IssueCauseSerializer, ActionSerializer,
                                                       IssueCategorySerializer, SolutionSerializer)
+from rucio_opint_backend.apps.api.validations import issue_query_schema
 
 
-class IssueViewSet(viewsets.ModelViewSet):
+class IssueViewSet(FiltersMixin, viewsets.ModelViewSet):
     """
     API endpoint that allows Issues to be viewed or edited.
     """
-    queryset = Issue.objects.all().order_by('-last_modified')
+    queryset = Issue.objects.all()
     serializer_class = IssueSerializer
+    filter_backends = (filters.OrderingFilter,)
+    ordering_fields = ('id', 'last_modified', 'src_site', 'dst_site')
+    ordering = ('id',)
+    filter_mappings = {
+        'id': 'id',
+        'message': 'message__icontains',
+        'categories': 'category'
+    }
+    filter_validation_schema = issue_query_schema
 
 
 class IssueCauseViewSet(viewsets.ModelViewSet):
