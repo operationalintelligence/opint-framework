@@ -4,4 +4,5 @@ django-model-utils
 requests
 flake8
 drf-url-filters
-six`
+six
+django-cors-headers
