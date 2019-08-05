@@ -7,7 +7,8 @@ services:
     environment:
       - "DJANGO_SETTINGS_MODULE=rucio_opint_backend.apps.core.settings"
       - "PYTHONPATH=/code:${PYTHONPATH}"
-      - "ADMIN_PASSWORD=malaka"
+      - "ADMIN_PASSWORD=replace_with_admin_password"
+      - "API_KEY=replace_with_app_key"
     volumes:
       - .:/code
     privileged: true
