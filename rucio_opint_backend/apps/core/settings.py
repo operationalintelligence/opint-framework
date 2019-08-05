@@ -16,19 +16,20 @@ import sys
 MIGRATIONS_STORE_MODULE = 'migrations'
 MIGRATIONS_STORE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Load local configuration
-try:
-    from settings_local import config, DEBUG
-    DEBUG = str(os.environ.get('DJANGO_DEBUG', DEBUG)).lower() in ['true', '1']
-    vars().update(config)
-except ImportError as e:
-    msg = "File settings_local.py not found or incomplete.\nError: %s" % e
-    print('sys.path=', sys.path, 'PWD=', os.getcwd())
-    raise Exception(msg)
+# # Load local configuration
+# try:
+#     from settings_local import config, DEBUG
+#     DEBUG = str(os.environ.get('DJANGO_DEBUG', DEBUG)).lower() in ['true', '1']
+#     vars().update(config)
+# except ImportError as e:
+#     msg = "File settings_local.py not found or incomplete.\nError: %s" % e
+#     print('sys.path=', sys.path, 'PWD=', os.getcwd())
+#     raise Exception(msg)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+API_KEY = os.environ.get('API_KEY')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -38,7 +39,12 @@ SECRET_KEY = 'i-cj+m#t+!rv6x4t1(2r^zt@@p4&x7pv)=of0xh-a6w&vs-e(1'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
+DATABASES = {
+        'default': {
+          'ENGINE': 'django.db.backends.sqlite3',
+          'NAME': '/code/rucioopint.sqlite3',  # same location as this config file
+        }
+}
 ALLOWED_HOSTS = []
 
 
