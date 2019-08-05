@@ -1,5 +1,6 @@
 #!/bin/bash
 ### CRON ####
+pip install -r requirements.txt
 export PYTHONPATH=/code:${PYTHONPATH}
 export DJANGO_SETTINGS_MODULE='rucio_opint_backend.apps.core.settings'
 python manage.py makemigrations core
