@@ -1,4 +1,4 @@
-FROM python:3
+FROM python:3.6
 ENV PYTHONUNBUFFERED 1
 RUN apt-get update && apt-get -y install cron vim
 RUN mkdir /code
