@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    command: ["./init.sh"]
+    environment:
+      - "DJANGO_SETTINGS_MODULE='rucio_opint_backend.apps.core.settings'"
+      - "PYTHONPATH=/code:${PYTHONPATH}"
+    volumes:
+      - .:/code
+    privileged: true
+    ports:
+      - "8000:8000"
+    restart: always
