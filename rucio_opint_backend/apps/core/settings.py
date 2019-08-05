@@ -30,6 +30,7 @@ MIGRATIONS_STORE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 API_KEY = os.environ.get('API_KEY')
+ALLOWED_HOSTS = ['*']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -45,7 +46,6 @@ DATABASES = {
           'NAME': '/code/rucioopint.sqlite3',  # same location as this config file
         }
 }
-ALLOWED_HOSTS = []
 
 
 # Application definition
