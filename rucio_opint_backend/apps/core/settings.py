@@ -134,7 +134,7 @@ STATIC_URL = '/static/'
 MIGRATION_MODULES_LIST = ['core']
 MIGRATION_MODULES = {}
 MIGRATION_MODULES.update(dict([k, '%s.%s' % (MIGRATIONS_STORE_MODULE, k)] for k in MIGRATION_MODULES_LIST))
-
+print("******" + str(MIGRATION_MODULES))
 ## check MIGRATIONS data dir
 if '.' not in MIGRATIONS_STORE_MODULE and MIGRATIONS_STORE_MODULE:  ## create directory structure if need
     m = os.path.join(MIGRATIONS_STORE_PATH, MIGRATIONS_STORE_MODULE)
