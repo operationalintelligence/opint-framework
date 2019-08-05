@@ -41,10 +41,10 @@ SECRET_KEY = 'i-cj+m#t+!rv6x4t1(2r^zt@@p4&x7pv)=of0xh-a6w&vs-e(1'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 DATABASES = {
-        'default': {
-          'ENGINE': 'django.db.backends.sqlite3',
-          'NAME': '/code/rucioopint.sqlite3',  # same location as this config file
-        }
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mydatabase',
+    }
 }
 
 
