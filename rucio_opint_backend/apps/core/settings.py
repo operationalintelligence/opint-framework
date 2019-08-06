@@ -42,8 +42,15 @@ SECRET_KEY = 'i-cj+m#t+!rv6x4t1(2r^zt@@p4&x7pv)=of0xh-a6w&vs-e(1'
 DEBUG = True
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'mydatabase',
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'rucio_opint',
+            'USER': 'admin',
+            'PASSWORD': os.environ.get('DB_PASS'),
+            'USER_CREATE': 'cric',
+            'PASSWORD_CREATE': os.environ.get('DB_PASS'),
+            'HOST': 'dbod-rucio-opint.cern.ch',
+            'PORT': '5501',
+            'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",}
     }
 }
 
