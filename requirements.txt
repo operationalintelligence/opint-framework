@@ -6,3 +6,4 @@ flake8
 drf-url-filters
 six
 django-cors-headers
+mysqlclient
