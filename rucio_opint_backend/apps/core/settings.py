@@ -171,4 +171,4 @@ REST_FRAMEWORK = {
 # CORS config
 CORS_ORIGIN_ALLOW_ALL = False
 # Allow react dev server to query
-CORS_ORIGIN_WHITELIST = ['http://localhost:8080']
+CORS_ORIGIN_WHITELIST = ['http://localhost:8080', 'http://rucio-opint-ui.web.cern.ch']
