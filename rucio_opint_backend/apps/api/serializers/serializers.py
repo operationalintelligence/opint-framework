@@ -9,10 +9,23 @@ class IssueSerializer(serializers.ModelSerializer):
 
 
 class ActionSerializer(serializers.ModelSerializer):
+
+    # TODO: Check if those two are needed
+    id = serializers.ReadOnlyField()
+    action = serializers.CharField(required=True)
+
     class Meta:
         model = Action
         fields = ['id', 'action', 'last_modified']
 
+    # Overwriting create to implement get_or_create approach in POST requests.
+    def create(self, validated_data):
+        # TODO: The line below relys in the fact that validated_data['action'] is either an id or an existing Action.
+        # TODO: Will break if it's neither.
+        print(validated_data['action'], validated_data['action'].isdigit())
+        guest, created = Action.objects.get_or_create(action=validated_data['action'] if not validated_data['action'].isdigit()
+        else Action.objects.filter(pk=validated_data['action']).first().action)
+        return guest
 
 class IssueCauseSerializer(serializers.ModelSerializer):
     class Meta:

@@ -24,6 +24,22 @@
     }
   },
   {
+    "model": "core.action",
+    "pk": 4,
+    "fields": {
+      "action": "Unknown",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
+  },
+  {
+    "model": "core.action",
+    "pk": 5,
+    "fields": {
+      "action": "Proposed",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
+  },
+  {
     "model": "core.issuecause",
     "pk": 1,
     "fields": {
