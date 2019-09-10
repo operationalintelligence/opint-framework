@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-import sys
 
 MIGRATIONS_STORE_MODULE = 'migrations'
 MIGRATIONS_STORE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -50,7 +49,7 @@ DATABASES = {
             'PASSWORD_CREATE': os.environ.get('DB_PASS'),
             'HOST': 'dbod-rucio-opint.cern.ch',
             'PORT': '5501',
-            'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",}
+            'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"}
     }
 }
 
@@ -148,8 +147,8 @@ MIGRATION_MODULES_LIST = ['core']
 MIGRATION_MODULES = {}
 MIGRATION_MODULES.update(dict([k, '%s.%s' % (MIGRATIONS_STORE_MODULE, k)] for k in MIGRATION_MODULES_LIST))
 print("******" + str(MIGRATION_MODULES))
-## check MIGRATIONS data dir
-if '.' not in MIGRATIONS_STORE_MODULE and MIGRATIONS_STORE_MODULE:  ## create directory structure if need
+# check MIGRATIONS data dir
+if '.' not in MIGRATIONS_STORE_MODULE and MIGRATIONS_STORE_MODULE:  # create directory structure if need
     m = os.path.join(MIGRATIONS_STORE_PATH, MIGRATIONS_STORE_MODULE)
     if m and not os.path.exists(m):
         print(' ... prepare directory structure for MIGRATION files: MIGRATIONS_STORE_MODULE=%s, MIGRATIONS_STORE_PATH=%s'

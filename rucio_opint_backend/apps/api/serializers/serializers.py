@@ -20,12 +20,13 @@ class ActionSerializer(serializers.ModelSerializer):
 
     # Overwriting create to implement get_or_create approach in POST requests.
     def create(self, validated_data):
-        # TODO: The line below relys in the fact that validated_data['action'] is either an id or an existing Action.
+        # TODO: The line below relies in the fact that validated_data['action'] is either an id or an existing Action.
         # TODO: Will break if it's neither.
         print(validated_data['action'], validated_data['action'].isdigit())
-        guest, created = Action.objects.get_or_create(action=validated_data['action'] if not validated_data['action'].isdigit()
-        else Action.objects.filter(pk=validated_data['action']).first().action)
+        action = validated_data['action'] if not validated_data['action'].isdigit() else Action.objects.filter(pk=validated_data['action']).first().action
+        guest, created = Action.objects.get_or_create(action=action)
         return guest
+
 
 class IssueCauseSerializer(serializers.ModelSerializer):
     class Meta:

@@ -35,7 +35,7 @@ class Command(BaseCommand):
         result = []
         if r.status_code == 200:
             response = r.json()
-            print response
+            print(response)
             for link in response['results'][0]['series']:
                 if link['values'][0][2] > 200:
                     if (100 * (link['values'][0][1] / link['values'][0][2])) < 20:
