@@ -6,7 +6,6 @@ from pyspark.sql import SparkSession
 from django.core.management.base import BaseCommand
 
 
-
 class Command(BaseCommand):
     help = 'Runs the HDFS fetching job'
 
@@ -28,7 +27,8 @@ class Command(BaseCommand):
         self.populate(**options)
 
     def populate(self, **options):
-        # spark = SparkSession.builder.master("local[*]").appName("Issues").getOrCreate()
+        spark = SparkSession.builder.master("local[*]").appName("Issues").getOrCreate()
+        print(spark)
         if options.get('date'):
             date = self.parse_date(options['date'])
             print('Will read data for', date)
