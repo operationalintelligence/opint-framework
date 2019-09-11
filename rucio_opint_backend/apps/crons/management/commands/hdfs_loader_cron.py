@@ -38,3 +38,6 @@ class Command(BaseCommand):
             print('will read data for ')
             for date in date_list:
                 print(date)
+        if options.get('file'):
+            for line in options.get('file'):
+                print('wIll rad data from', line)
