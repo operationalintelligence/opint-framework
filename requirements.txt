@@ -7,3 +7,4 @@ drf-url-filters
 six
 django-cors-headers
 mysqlclient
+pyspark

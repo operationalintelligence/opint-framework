@@ -51,6 +51,10 @@ DATABASES = {
             'PORT': '5501',
             'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"}
     }
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': 'rucio_opint',
+    # }
 }
 
 
@@ -146,7 +150,6 @@ STATIC_URL = '/static/'
 MIGRATION_MODULES_LIST = ['core']
 MIGRATION_MODULES = {}
 MIGRATION_MODULES.update(dict([k, '%s.%s' % (MIGRATIONS_STORE_MODULE, k)] for k in MIGRATION_MODULES_LIST))
-print("******" + str(MIGRATION_MODULES))
 # check MIGRATIONS data dir
 if '.' not in MIGRATIONS_STORE_MODULE and MIGRATIONS_STORE_MODULE:  # create directory structure if need
     m = os.path.join(MIGRATIONS_STORE_PATH, MIGRATIONS_STORE_MODULE)
