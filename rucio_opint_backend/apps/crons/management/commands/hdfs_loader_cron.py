@@ -42,7 +42,7 @@ class Command(BaseCommand):
             print('Error loading data from', path, e)
 
     def fetch_issues(self, df):
-        issues = df.filter(df.data.event_type.ising(['transfer-failed', 'deletion-failed']))\
+        issues = df.filter(df.data.event_type.isin(['transfer-failed', 'deletion-failed']))\
             .groupby(df.data.reason.alias('reason'),
                      df.data.src_rse.alias('src_rse'),
                      df.data.dst_rse.alias('dst_rse'),
@@ -53,8 +53,8 @@ class Command(BaseCommand):
             issue_obj = {
                 'message': issue.reason,
                 'amount': issue.count,
-                'dst_site': issue.dst_rse.split('_')[0],
-                'src_site': issue.src_rse.split('_')[0],
+                'dst_site': issue.dst_rse.split('_')[0] if issue.dst_rse else '',
+                'src_site': issue.src_rse.split('_')[0] if issue.src_rse else '',
                 'type': issue.event_type
             }
             print(issue_obj)
