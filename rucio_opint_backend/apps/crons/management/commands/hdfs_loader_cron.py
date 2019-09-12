@@ -6,6 +6,7 @@ from pyspark.sql import SparkSession
 from django.core.management.base import BaseCommand
 
 from rucio_opint_backend.apps.utils.tools import parse_date
+from rucio_opint_backend.apps.utils.register import register_issue
 
 
 class Command(BaseCommand):
@@ -37,11 +38,11 @@ class Command(BaseCommand):
     def pull_hdfs_json(self, path, spark):
         try:
             res = spark.read.json(path)
-            self.fetch_issues(res)
+            self.register_issues(res)
         except Exception as e:
             print('Error loading data from', path, e)
 
-    def fetch_issues(self, df):
+    def register_issues(self, df):
         issues = df.filter(df.data.event_type.isin(['transfer-failed', 'deletion-failed']))\
             .groupby(df.data.reason.alias('reason'),
                      df.data.src_rse.alias('src_rse'),
@@ -57,7 +58,7 @@ class Command(BaseCommand):
                 'src_site': issue['src_rse'].split('_')[0] if issue.src_rse else '',
                 'type': issue['event_type']
             }
-            print(issue_obj)
+            register_issue(issue_obj)
 
     def populate(self, **options):
         spark = SparkSession.builder.master("local[*]").appName("Issues").getOrCreate()
