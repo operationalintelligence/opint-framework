@@ -11,7 +11,7 @@ from rucio_opint_backend.apps.utils.tools import parse_date
 class Command(BaseCommand):
     help = 'Runs the HDFS fetching job'
 
-    base_path = 'project/monitoring/archive/rucio/raw/events'
+    base_path = '/project/monitoring/archive/rucio/raw/events'
 
     def add_arguments(self, parser):
         parser.add_argument('-f', '--file', type=argparse.FileType('r'), help='File with files to be imported')
