@@ -34,25 +34,45 @@ class Command(BaseCommand):
         except Exception as e:
             print('Error listing files for ', path, e)
 
-
     def pull_hdfs_json(self, path, spark):
         try:
             res = spark.read.json(path)
-            print(res)
+            self.fetch_issues(res)
         except Exception as e:
             print('Error loading data from', path, e)
+
+    def fetch_issues(self, df):
+        issues = df.filter(df.data.event_type.ising(['transfer-failed', 'deletion-failed']))\
+            .groupby(df.data.reason.alias('reason'),
+                     df.data.src_rse.alias('src_rse'),
+                     df.data.dst_rse.alias('dst_rse'),
+                     df.data.event_type.alias('event_type'))\
+            .count()\
+            .collect()
+        for issue in issues:
+            issue_obj = {
+                'message': issue.reason,
+                'amount': issue.count,
+                'dst_site': issue.dst_rse.split('_')[0],
+                'src_site': issue.src_rse.split('_')[0],
+                'type': issue.event_type
+            }
+            print(issue_obj)
 
     def populate(self, **options):
         spark = SparkSession.builder.master("local[*]").appName("Issues").getOrCreate()
         if options.get('date'):
             path = self.construct_path_for_date(parse_date(options['date']))
             self.pull_hdfs_dir(path, spark)
-        if options.get('range'):
+        elif options.get('range'):
             today = datetime.datetime.today()
             date_list = [today - datetime.timedelta(days=x) for x in range(options['range'])]
             for date in date_list:
                 path = self.construct_path_for_date(date)
                 self.pull_hdfs_dir(path, spark)
-        if options.get('file'):
+        elif options.get('file'):
             for line in options.get('file'):
                 self.pull_hdfs_json(line, spark)
+        else:
+            path = self.construct_path_for_date(datetime.datetime.today())
+            self.pull_hdfs_dir(path, spark)
