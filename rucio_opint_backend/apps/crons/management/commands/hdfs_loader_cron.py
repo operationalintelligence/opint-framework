@@ -75,5 +75,5 @@ class Command(BaseCommand):
             for line in options.get('file'):
                 self.pull_hdfs_json(line, spark)
         else:
-            path = self.construct_path_for_date(datetime.datetime.today())
+            path = self.construct_path_for_date(datetime.datetime.today() - datetime.timedelta(days=1))
             self.pull_hdfs_dir(path, spark)
