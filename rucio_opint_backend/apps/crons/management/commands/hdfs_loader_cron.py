@@ -51,11 +51,11 @@ class Command(BaseCommand):
             .collect()
         for issue in issues:
             issue_obj = {
-                'message': issue.reason,
-                'amount': issue.count,
-                'dst_site': issue.dst_rse.split('_')[0] if issue.dst_rse else '',
-                'src_site': issue.src_rse.split('_')[0] if issue.src_rse else '',
-                'type': issue.event_type
+                'message': issue['reason'],
+                'amount': issue['count'],
+                'dst_site': issue['dst_rse'].split('_')[0] if issue.dst_rse else '',
+                'src_site': issue['src_rse'].split('_')[0] if issue.src_rse else '',
+                'type': issue['event_type']
             }
             print(issue_obj)
 
