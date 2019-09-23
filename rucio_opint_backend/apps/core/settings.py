@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'filters',
     'corsheaders',
     'rucio_opint_backend.apps.core',
+    'rucio_opint_backend.apps.users',
     'rucio_opint_backend.apps.api',
     'rucio_opint_backend.apps.crons',
     'rucio_opint_backend.apps.utils'
@@ -165,8 +166,21 @@ if '.' not in MIGRATIONS_STORE_MODULE and MIGRATIONS_STORE_MODULE:  # create dir
 
 # RestFramework config
 REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100
+}
+
+# JWT Auth Settings
+JWT_AUTH = {
+    'JWT_RESPONSE_PAYLOAD_HANDLER': 'rucio_opint_backend.apps.users.utils.my_jwt_response_handler'
 }
 
 

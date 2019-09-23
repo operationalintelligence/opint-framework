@@ -19,4 +19,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('rucio_opint_backend.apps.api.urls')),
+    path('auth/', include('rucio_opint_backend.apps.users.urls')),
 ]
