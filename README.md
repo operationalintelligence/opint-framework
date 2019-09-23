@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/Panos512/rucio-opint-backend-django.svg?token=9WE9v7qSHUzbjJweTfrs&branch=master)](https://travis-ci.com/Panos512/rucio-opint-backend-django)
+[![Build Status](https://travis-ci.com/operationalintelligence/rucio-opint-backend.svg?branch=master)](https://travis-ci.com/operationalintelligence/rucio-opint-backend)
 
 ## Description
 
