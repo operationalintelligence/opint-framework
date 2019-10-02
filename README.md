@@ -30,11 +30,12 @@ Export settings module:
 export DJANGO_SETTINGS_MODULE='rucio_opint_backend.apps.core.settings'
 ```
 
-The following enviromental variables can be set:
+The following environmental variables can be set:
+```commandline
 API_KEY: The key for Monit Grafana's API
 DB_PASS: The pass for the produciton database.
 For Development you can enable sqlite from `rucio_opint_backend/apps/core/settings.py` 
-
+```
 Create DB:
 ```commandline
 python manage.py makemigrations core
