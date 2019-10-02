@@ -8,7 +8,7 @@ Rucio OpInt backend.
 
 Fork the repo into your personal project and clone the project.
 ```commandline
-cd ~/projects/rucio-opint-frontend
+cd ~/projects/rucio-opint/
 git clone https://github.com/operationalintelligence/rucio-opint-backend
 ```
 
@@ -21,42 +21,19 @@ source ~/environments/rucio-opint-backend/bin/activate
 
 Install Python dependencies:
 ```commandline
-cd ~/projects/rucio-opint-backend
+cd ~/projects/rucio-opint/rucio-opint-backend
 pip install -r requirements.txt
-```
-Create in a directory your personal `settings_local.py` file to store sensitive information
+``` 
 
-settings_local.py template:
-```python
-"""
-Local (host dependent) sensitive settings
-"""
-import os
-
-
-DEBUG = True
-
-BASE_DIR = os.path.realpath(os.path.dirname(__file__))  # location of this config file
-
-config = {
-
-    'SECRET_KEY': '',  # FIX ME TO UNIQUE VALUE
-    'API_KEY': '',  # API key for elasticsearch queries
-    'DATABASES': {
-        'default': {
-          'ENGINE': 'django.db.backends.sqlite3',
-          'NAME': os.path.join(BASE_DIR, 'rucioopint.sqlite3'),  # same location as this config file
-        }
-    },
-    'TMP_DIR': os.path.join(BASE_DIR, 'cache'),
-    'MIGRATIONS_STORE_PATH': os.path.join(BASE_DIR, 'migrations')
-}
-```
-
-Update `PYTHONPATH` to include path to your `settings_local.py` file
+Export settings module:
 ```commandline
-export PYTHONPATH=/path_to_settings_local_directory/:${PYTHONPATH};
+export DJANGO_SETTINGS_MODULE='rucio_opint_backend.apps.core.settings'
 ```
+
+The following enviromental variables can be set:
+API_KEY: The key for Monit Grafana's API
+DB_PASS: The pass for the produciton database.
+For Development you can enable sqlite from `rucio_opint_backend/apps/core/settings.py` 
 
 Create DB:
 ```commandline
