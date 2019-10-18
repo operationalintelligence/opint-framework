@@ -56,3 +56,18 @@ Run the django server:
 ```commandline
 python manage.py runserver
 ```
+
+## Fetching information:
+In order to fetch issues from HDFS:
+```commandline
+python manage.py hdfs_loader_cron
+```
+For a specific date:
+```commandline
+python manage.py hdfs_loader_cron --date=12/1/2019
+```
+
+In order to fetch issues from Monit-Grafana ES API:
+```commandline
+python manage.py rucio_loader_cron
+```
