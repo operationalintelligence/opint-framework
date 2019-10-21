@@ -7,10 +7,10 @@ from rucio_opint_backend.apps.utils.categorizer import categorize_issue
 def register_transfer_issue(issue):
     print("INFO: registering issue ", issue)
     obj, created = TransferIssue.objects.get_or_create(message=issue.pop('message'),
-                                               src_site=issue.pop('src_site'),
-                                               dst_site=issue.pop('dst_site'),
-                                               type=issue.pop('type'),
-                                               defaults=issue)
+                                                       src_site=issue.pop('src_site'),
+                                                       dst_site=issue.pop('dst_site'),
+                                                       type=issue.pop('type'),
+                                                       defaults=issue)
     if not created:
         obj.last_modified = time.time()
         obj.save(update_fields=['last_modified'])

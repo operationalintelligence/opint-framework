@@ -7,10 +7,12 @@ class TransferIssueSerializer(serializers.ModelSerializer):
         model = TransferIssue
         fields = ['id', 'message', 'src_site', 'dst_site', 'category', 'amount', 'type', 'status', 'last_modified']
 
+
 class WorkflowIssueSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowIssue
         fields = ['id', 'message', 'workflow', 'category', 'amount', 'type', 'status', 'last_modified']
+
 
 class ActionSerializer(serializers.ModelSerializer):
 

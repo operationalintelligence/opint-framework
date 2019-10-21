@@ -6,6 +6,7 @@ from .models import WorkflowIssue, TransferIssue, IssueCategory, IssueCause, Act
 class WorkflowIssueAdmin(admin.ModelAdmin):
     list_display = ['id', 'message', 'workflow', 'category', 'type', 'status', 'last_modified']
 
+
 class TransferIssueAdmin(admin.ModelAdmin):
     list_display = ['id', 'message', 'src_site', 'dst_site', 'category', 'type', 'status', 'last_modified']
 
