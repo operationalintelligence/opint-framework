@@ -6,7 +6,7 @@ from pyspark.sql import SparkSession
 from django.core.management.base import BaseCommand
 
 from rucio_opint_backend.apps.utils.tools import parse_date
-from rucio_opint_backend.apps.utils.register import register_issue
+from rucio_opint_backend.apps.utils.register import register_transfer_issue
 
 
 class Command(BaseCommand):
@@ -58,7 +58,7 @@ class Command(BaseCommand):
                 'src_site': issue['src_rse'].split('_')[0] if issue.src_rse else '',
                 'type': issue['event_type']
             }
-            register_issue(issue_obj)
+            register_transfer_issue(issue_obj)
 
     def populate(self, **options):
         spark = SparkSession.builder.master("local[*]").appName("Issues").getOrCreate()

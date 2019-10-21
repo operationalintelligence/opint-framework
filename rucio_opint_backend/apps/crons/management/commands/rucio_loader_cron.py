@@ -4,7 +4,7 @@ import requests
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-from rucio_opint_backend.apps.utils.register import register_issue
+from rucio_opint_backend.apps.utils.register import register_transfer_issue
 
 
 class Command(BaseCommand):
@@ -77,7 +77,7 @@ class Command(BaseCommand):
                     'src_site': link[sites][1]['src_experiment_site'],
                     'type': activity + '-failure'
                 }
-                register_issue(issue)
+                register_transfer_issue(issue)
 
     def handle(self, *args, **options):
         print("Importing Rucio error data from monit-grafana")

@@ -1,12 +1,16 @@
 from rest_framework import serializers
-from rucio_opint_backend.apps.core.models import Issue, Action, IssueCause, IssueCategory, Solution
+from rucio_opint_backend.apps.core.models import TransferIssue, WorkflowIssue, Action, IssueCause, IssueCategory, Solution
 
 
-class IssueSerializer(serializers.ModelSerializer):
+class TransferIssueSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Issue
+        model = TransferIssue
         fields = ['id', 'message', 'src_site', 'dst_site', 'category', 'amount', 'type', 'status', 'last_modified']
 
+class WorkflowIssueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkflowIssue
+        fields = ['id', 'message', 'workflow', 'category', 'amount', 'type', 'status', 'last_modified']
 
 class ActionSerializer(serializers.ModelSerializer):
 

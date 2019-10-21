@@ -40,8 +40,6 @@ class Issue(models.Model):
     """
 
     message = models.CharField(max_length=512)
-    src_site = models.CharField(max_length=128)
-    dst_site = models.CharField(max_length=128)
 
     category = models.ForeignKey(IssueCategory, null=True, on_delete=models.PROTECT)
 
@@ -52,7 +50,7 @@ class Issue(models.Model):
     last_modified = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = (('message', 'src_site', 'dst_site', 'type'), )
+        abstract = True
 
     def __str__(self):
         return str(self.id)
