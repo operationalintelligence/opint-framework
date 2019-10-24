@@ -9,3 +9,5 @@ six
 django-cors-headers
 mysqlclient
 pyspark
+whitenoise
+gunicorn
