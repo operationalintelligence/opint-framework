@@ -29,7 +29,7 @@ DEBUG = True
 DATABASES = {
     'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'rucio_opint',
+            'NAME': os.environ.get('DB_NAME'),
             'USER': 'admin',
             'PASSWORD': os.environ.get('DB_PASS'),
             'USER_CREATE': 'cric',
