@@ -43,7 +43,7 @@ elif MODE == "prod":
     DATABASES = {
         'default': {
                 'ENGINE': 'django.db.backends.mysql',
-                'NAME': os.environ.get('DB_NAME'), #'rucio_opint',
+                'NAME': os.environ.get('DB_NAME'),
                 'USER': 'admin',
                 'PASSWORD': os.environ.get('DB_PASS'),
                 'USER_CREATE': 'cric',
