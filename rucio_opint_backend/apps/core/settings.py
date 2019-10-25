@@ -27,8 +27,8 @@ SECRET_KEY = 'i-cj+m#t+!rv6x4t1(2r^zt@@p4&x7pv)=of0xh-a6w&vs-e(1'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 MODE = os.environ.get('MODE')
-if MODE == "dev":
 
+if MODE == "dev":
     DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -50,7 +50,7 @@ elif MODE == "prod":
                 'PASSWORD_CREATE': os.environ.get('DB_PASS'),
                 'HOST': 'dbod-rucio-opint.cern.ch',
                 'PORT': '5501',
-                'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",}
+                'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"}
         }
     }
 
