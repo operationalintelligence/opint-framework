@@ -1,8 +1,7 @@
 #!/bin/bash
-### CRON ####
-#pip install -r requirements.txt
-export PYTHONPATH=/code:${PYTHONPATH}
-export DJANGO_SETTINGS_MODULE='rucio_opint_backend.apps.core.settings'
+export PYTHONPATH=${APP_ROOT}:${PYTHONPATH}
+mkdir -p ${APP_ROOT}/migrations/core
+touch ${APP_ROOT}/migrations/core/__init__.py
 python manage.py makemigrations core
 python manage.py migrate
 python manage.py loaddata initial

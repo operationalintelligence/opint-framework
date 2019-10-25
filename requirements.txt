@@ -11,3 +11,4 @@ mysqlclient
 pyspark
 whitenoise
 gunicorn
+psycopg2

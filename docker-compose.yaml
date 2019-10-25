@@ -1,17 +1,35 @@
-version: '3'
+version: '3.7'
 
 services:
-  web:
-    build: .
-    command: ["./init.sh"]
-    environment:
-      - "DJANGO_SETTINGS_MODULE=rucio_opint_backend.apps.core.settings"
-      - "PYTHONPATH=/code:${PYTHONPATH}"
-      - "ADMIN_PASSWORD=replace_with_admin_password"
-      - "API_KEY=replace_with_app_key"
+  db:
+    image: postgres
+    restart: always
     volumes:
-      - .:/code
+      - postgres_data_opint:/var/lib/postgresql/data
+    environment:
+      - "POSTGRES_PASSWORD=thereisnospoon"
+      - "POSTGRES_USER=postgres"
+      - "POSTGRES_DB=postgres"
+  
+  backend:
+    build: ./
+    command: "/usr/src/app/init.sh"
+    volumes:
+      - .:/usr/src/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=rucio_opint_backend.apps.core.settings
+      - ADMIN_PASSWORD=thereisnospoon
+      - POSTGRES_DB_DEV=postgres
+      - POSTGRES_USER_DEV=postgres
+      - POSTGRES_PASSWORD_DEV=thereisnospoon
+      - MODE=dev
+    env_file:
+      - .env
     privileged: true
     ports:
-      - "8080:8080"
-    restart: always
+      - "8000:8000"
+    # restart: always
+    depends_on:
+      - db
+volumes:
+  postgres_data_opint:
