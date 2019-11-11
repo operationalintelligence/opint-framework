@@ -1,11 +1,12 @@
 import argparse
 import datetime
+import requests
 
 from pyspark.sql import SparkSession
 
 from django.core.management.base import BaseCommand
 
-from rucio_opint_backend.apps.utils.tools import parse_date
+from rucio_opint_backend.apps.utils.tools import parse_date, get_hostname
 from rucio_opint_backend.apps.utils.register import register_transfer_issue
 
 
@@ -38,18 +39,23 @@ class Command(BaseCommand):
     def pull_hdfs_json(self, path, spark):
         try:
             res = spark.read.json(path)
-            self.register_issues(res)
+            issues = self.resolve_issues(res)
+            self.register_issues(issues)
         except Exception as e:
             print('Error loading data from', path, e)
 
-    def register_issues(self, df):
-        issues = df.filter(df.data.event_type.isin(['transfer-failed', 'deletion-failed']))\
+    def resolve_issues(self, df):
+        issues = df.filter(df.data.event_type.isin(['transfer-failed', 'deletion-failed'])) \
             .groupby(df.data.reason.alias('reason'),
                      df.data.src_rse.alias('src_rse'),
                      df.data.dst_rse.alias('dst_rse'),
-                     df.data.event_type.alias('event_type'))\
-            .count()\
+                     df.data.event_type.alias('event_type')) \
+            .count() \
             .collect()
+        return issues
+
+    def register_issues(self, issues):
+        issues = self.resolve_issues(issues)
         for issue in issues:
             issue_obj = {
                 'message': issue['reason'],
@@ -59,6 +65,22 @@ class Command(BaseCommand):
                 'type': issue['event_type']
             }
             register_transfer_issue(issue_obj)
+
+    def resolve_sites(self, issues):
+        cric_url = "http://wlcg-cric.cern.ch/api/core/service/query/?json&type=SE"
+        r = requests.get(url=cric_url).json()
+        site_protocols = {}
+        for site, info in r.iteritems():
+            for name, prot in info.get('protocols', {}).iteritems():
+                site_protocols.setdefault(get_hostname(prot['endpoint']), site)
+
+        for issue in issues:
+            if not issue['src_site']:
+                issue['src_site'] = site_protocols.get(get_hostname(issue['src_endpoint']))
+            if not issue['dst_site']:
+                issue['dst_site'] = site_protocols.get(get_hostname(issue['dst_endpoint']))
+
+        return issues
 
     def populate(self, **options):
         spark = SparkSession.builder.master("local[*]").appName("Issues").getOrCreate()
