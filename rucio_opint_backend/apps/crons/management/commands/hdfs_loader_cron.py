@@ -13,7 +13,7 @@ from rucio_opint_backend.apps.utils.register import register_transfer_issue
 class Command(BaseCommand):
     help = 'Runs the HDFS fetching job'
 
-    base_path = '/project/monitoring/archive/rucio/raw/events'
+    base_path = '/project/monitoring/archive/fts/raw/complete'
 
     def add_arguments(self, parser):
         parser.add_argument('-f', '--file', type=argparse.FileType('r'), help='File with files to be imported')
@@ -45,11 +45,10 @@ class Command(BaseCommand):
             print('Error loading data from', path, e)
 
     def resolve_issues(self, df):
-        issues = df.filter(df.data.event_type.isin(['transfer-failed', 'deletion-failed'])) \
-            .groupby(df.data.reason.alias('reason'),
-                     df.data.src_rse.alias('src_rse'),
-                     df.data.dst_rse.alias('dst_rse'),
-                     df.data.event_type.alias('event_type')) \
+        issues = df.filter(df.data.t_final_transfer_state_flag == 0) \
+            .groupby(df.data.reason.alias('t__error_message'),
+                     df.data.src_rse.alias('src_hostname'),
+                     df.data.dst_rse.alias('dst_hostname')) \
             .count() \
             .collect()
         return issues
@@ -58,11 +57,11 @@ class Command(BaseCommand):
         issues = self.resolve_issues(issues)
         for issue in issues:
             issue_obj = {
-                'message': issue['reason'],
+                'message': issue['t__error_message'],
                 'amount': issue['count'],
-                'dst_site': issue['dst_rse'].split('_')[0] if issue.dst_rse else '',
-                'src_site': issue['src_rse'].split('_')[0] if issue.src_rse else '',
-                'type': issue['event_type']
+                'dst_site': issue.get('dst_site_name'),
+                'src_site': issue.get('src_site_name'),
+                'fts_category': issue.get('tr_error_category')
             }
             register_transfer_issue(issue_obj)
 
@@ -75,10 +74,10 @@ class Command(BaseCommand):
                 site_protocols.setdefault(get_hostname(prot['endpoint']), site)
 
         for issue in issues:
-            if not issue['src_site']:
-                issue['src_site'] = site_protocols.get(get_hostname(issue['src_endpoint']))
-            if not issue['dst_site']:
-                issue['dst_site'] = site_protocols.get(get_hostname(issue['dst_endpoint']))
+            if not issue['src_site_name']:
+                issue['src_site_name'] = site_protocols.get(get_hostname(issue['src_url']))
+            if not issue['dst_site_name']:
+                issue['dst_site_name'] = site_protocols.get(get_hostname(issue['dst_url']))
 
         return issues
 
