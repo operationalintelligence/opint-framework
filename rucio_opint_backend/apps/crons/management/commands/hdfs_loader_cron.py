@@ -1,5 +1,7 @@
 import argparse
 import datetime
+import traceback
+
 import requests
 
 from pyspark.sql import SparkSession
@@ -40,44 +42,52 @@ class Command(BaseCommand):
         try:
             res = spark.read.json(path)
             issues = self.resolve_issues(res)
-            self.register_issues(issues)
+            issues = self.resolve_sites(issues)
+            for issue in issues:
+                register_transfer_issue(issue)
         except Exception as e:
             print('Error loading data from', path, e)
+            traceback.print_tb(e.__traceback__)
 
     def resolve_issues(self, df):
         issues = df.filter(df.data.t_final_transfer_state_flag == 0) \
-            .groupby(df.data.reason.alias('t__error_message'),
-                     df.data.src_rse.alias('src_hostname'),
-                     df.data.dst_rse.alias('dst_hostname')) \
+            .groupby(df.data.t__error_message.alias('t__error_message'),
+                     df.data.src_hostname.alias('src_hostname'),
+                     df.data.dst_hostname.alias('dst_hostname'),
+                     df.data.dst_site_name.alias('dst_site_name'),
+                     df.data.src_site_name.alias('src_site_name'),
+                     df.data.tr_error_category.alias('tr_error_category')) \
             .count() \
             .collect()
-        return issues
-
-    def register_issues(self, issues):
-        issues = self.resolve_issues(issues)
+        objs = []
         for issue in issues:
             issue_obj = {
                 'message': issue['t__error_message'],
                 'amount': issue['count'],
-                'dst_site': issue.get('dst_site_name'),
-                'src_site': issue.get('src_site_name'),
-                'fts_category': issue.get('tr_error_category')
+                'dst_site': issue['dst_site_name'],
+                'src_site': issue['src_site_name'],
+                'src_hostname': issue['src_hostname'],
+                'dst_hostname': issue['dst_hostname'],
+                # 'category': issue['tr_error_category'],
+                'type': 'transfer-error'
             }
-            register_transfer_issue(issue_obj)
+            objs.append(issue_obj)
+        return objs
 
     def resolve_sites(self, issues):
         cric_url = "http://wlcg-cric.cern.ch/api/core/service/query/?json&type=SE"
         r = requests.get(url=cric_url).json()
         site_protocols = {}
-        for site, info in r.iteritems():
-            for name, prot in info.get('protocols', {}).iteritems():
-                site_protocols.setdefault(get_hostname(prot['endpoint']), site)
+        for site, info in r.items():
+            for se in info:
+                for name, prot in se.get('protocols', {}).items():
+                    site_protocols.setdefault(get_hostname(prot['endpoint']), site)
 
         for issue in issues:
-            if not issue['src_site_name']:
-                issue['src_site_name'] = site_protocols.get(get_hostname(issue['src_url']))
-            if not issue['dst_site_name']:
-                issue['dst_site_name'] = site_protocols.get(get_hostname(issue['dst_url']))
+            if not issue.get('src_site'):
+                issue['src_site'] = site_protocols.get(get_hostname(issue.pop('src_hostname')), '')
+            if not issue.get('dst_site'):
+                issue['dst_site'] = site_protocols.get(get_hostname(issue.pop('dst_hostname')), '')
 
         return issues
 
