@@ -1,18 +1,21 @@
 import argparse
 import datetime
+import traceback
+
+import requests
 
 from pyspark.sql import SparkSession
 
 from django.core.management.base import BaseCommand
 
-from rucio_opint_backend.apps.utils.tools import parse_date
+from rucio_opint_backend.apps.utils.tools import parse_date, get_hostname
 from rucio_opint_backend.apps.utils.register import register_transfer_issue
 
 
 class Command(BaseCommand):
     help = 'Runs the HDFS fetching job'
 
-    base_path = '/project/monitoring/archive/rucio/raw/events'
+    base_path = '/project/monitoring/archive/fts/raw/complete'
 
     def add_arguments(self, parser):
         parser.add_argument('-f', '--file', type=argparse.FileType('r'), help='File with files to be imported')
@@ -38,27 +41,55 @@ class Command(BaseCommand):
     def pull_hdfs_json(self, path, spark):
         try:
             res = spark.read.json(path)
-            self.register_issues(res)
+            issues = self.resolve_issues(res)
+            issues = self.resolve_sites(issues)
+            for issue in issues:
+                register_transfer_issue(issue)
         except Exception as e:
             print('Error loading data from', path, e)
+            traceback.print_tb(e.__traceback__)
 
-    def register_issues(self, df):
-        issues = df.filter(df.data.event_type.isin(['transfer-failed', 'deletion-failed']))\
-            .groupby(df.data.reason.alias('reason'),
-                     df.data.src_rse.alias('src_rse'),
-                     df.data.dst_rse.alias('dst_rse'),
-                     df.data.event_type.alias('event_type'))\
-            .count()\
+    def resolve_issues(self, df):
+        issues = df.filter(df.data.t_final_transfer_state_flag == 0) \
+            .groupby(df.data.t__error_message.alias('t__error_message'),
+                     df.data.src_hostname.alias('src_hostname'),
+                     df.data.dst_hostname.alias('dst_hostname'),
+                     df.data.dst_site_name.alias('dst_site_name'),
+                     df.data.src_site_name.alias('src_site_name'),
+                     df.data.tr_error_category.alias('tr_error_category')) \
+            .count() \
             .collect()
+        objs = []
         for issue in issues:
             issue_obj = {
-                'message': issue['reason'],
+                'message': issue['t__error_message'],
                 'amount': issue['count'],
-                'dst_site': issue['dst_rse'].split('_')[0] if issue.dst_rse else '',
-                'src_site': issue['src_rse'].split('_')[0] if issue.src_rse else '',
-                'type': issue['event_type']
+                'dst_site': issue['dst_site_name'],
+                'src_site': issue['src_site_name'],
+                'src_hostname': issue['src_hostname'],
+                'dst_hostname': issue['dst_hostname'],
+                # 'category': issue['tr_error_category'],
+                'type': 'transfer-error'
             }
-            register_transfer_issue(issue_obj)
+            objs.append(issue_obj)
+        return objs
+
+    def resolve_sites(self, issues):
+        cric_url = "http://wlcg-cric.cern.ch/api/core/service/query/?json&type=SE"
+        r = requests.get(url=cric_url).json()
+        site_protocols = {}
+        for site, info in r.items():
+            for se in info:
+                for name, prot in se.get('protocols', {}).items():
+                    site_protocols.setdefault(get_hostname(prot['endpoint']), site)
+
+        for issue in issues:
+            if not issue.get('src_site'):
+                issue['src_site'] = site_protocols.get(get_hostname(issue.pop('src_hostname')), '')
+            if not issue.get('dst_site'):
+                issue['dst_site'] = site_protocols.get(get_hostname(issue.pop('dst_hostname')), '')
+
+        return issues
 
     def populate(self, **options):
         spark = SparkSession.builder.master("local[*]").appName("Issues").getOrCreate()
