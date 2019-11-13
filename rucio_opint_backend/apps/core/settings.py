@@ -54,6 +54,7 @@ elif MODE == "prod":
         }
     }
 
+
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -67,7 +68,15 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'rest_framework',
+    'rest_framework.authtoken',
+    'rest_auth',
+    'rest_auth.registration',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.cern',
     'filters',
     'corsheaders',
     'rucio_opint_backend.apps.core',
@@ -76,6 +85,9 @@ INSTALLED_APPS = [
     'rucio_opint_backend.apps.crons',
     'rucio_opint_backend.apps.utils'
 ]
+
+SITE_ID = 1
+REST_USE_JWT = True
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -151,25 +163,25 @@ STATIC_URL = '/static/'
 
 # RestFramework config
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        #  vv'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-    ),
+    # 'DEFAULT_PERMISSION_CLASSES': (
+    #     #  vv'rest_framework.permissions.IsAuthenticated',
+    # ),
+    # 'DEFAULT_AUTHENTICATION_CLASSES': (
+    #     'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+    #     'rest_framework.authentication.SessionAuthentication',
+    #     'rest_framework.authentication.BasicAuthentication',
+    # ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100
 }
 
-# JWT Auth Settings
-JWT_AUTH = {
-    'JWT_RESPONSE_PAYLOAD_HANDLER': 'rucio_opint_backend.apps.users.utils.my_jwt_response_handler'
-}
+# # JWT Auth Settings
+# JWT_AUTH = {
+#     'JWT_RESPONSE_PAYLOAD_HANDLER': 'rucio_opint_backend.apps.users.utils.my_jwt_response_handler'
+# }
 
 
 # CORS config
-CORS_ORIGIN_ALLOW_ALL = False
-# Allow react dev server to query
-CORS_ORIGIN_WHITELIST = ['http://localhost:8080', 'http://rucio-opint-ui.web.cern.ch']
+CORS_ORIGIN_ALLOW_ALL = True
+# # Allow react dev server to query
+# CORS_ORIGIN_WHITELIST = ['http://localhost:8080', 'http://rucio-opint-ui.web.cern.ch']
