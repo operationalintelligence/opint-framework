@@ -180,6 +180,9 @@ REST_FRAMEWORK = {
 #     'JWT_RESPONSE_PAYLOAD_HANDLER': 'rucio_opint_backend.apps.users.utils.my_jwt_response_handler'
 # }
 
+# FIXME: This will avoid the need for an SMTP server as e-mails will be printed to the console.
+#  allauth is sending verification emails and the code breaks with connection refused if email backend is not properly setup
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # CORS config
 CORS_ORIGIN_ALLOW_ALL = True
