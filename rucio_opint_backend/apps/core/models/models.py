@@ -39,7 +39,7 @@ class Issue(models.Model):
     Rucio Issue object.
     """
 
-    message = models.CharField(max_length=512)
+    message = models.CharField(max_length=1024)
 
     category = models.ForeignKey(IssueCategory, null=True, on_delete=models.PROTECT)
 
