@@ -1,9 +1,9 @@
 from rest_framework import viewsets, filters
 from filters.mixins import FiltersMixin
 
-from rucio_opint_backend.apps.core.models import TransferIssue, WorkflowIssue, IssueCause, Action, IssueCategory, Solution
+from rucio_opint_backend.apps.core.models import TransferIssue, WorkflowIssue, Action, IssueCategory, Solution
 
-from rucio_opint_backend.apps.api.serializers import (TransferIssueSerializer, WorkflowIssueSerializer, IssueCauseSerializer, ActionSerializer,
+from rucio_opint_backend.apps.api.serializers import (TransferIssueSerializer, WorkflowIssueSerializer, ActionSerializer,
                                                       IssueCategorySerializer, SolutionSerializer)
 from rucio_opint_backend.apps.api.validations import issue_query_schema
 
@@ -43,12 +43,12 @@ class WorkflowIssueViewSet(FiltersMixin, viewsets.ModelViewSet):
     filter_validation_schema = issue_query_schema
 
 
-class IssueCauseViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows IssueCauses to be viewed or edited.
-    """
-    queryset = IssueCause.objects.all()
-    serializer_class = IssueCauseSerializer
+# class IssueCauseViewSet(viewsets.ModelViewSet):
+#     """
+#     API endpoint that allows IssueCauses to be viewed or edited.
+#     """
+#     queryset = IssueCause.objects.all()
+#     serializer_class = IssueCauseSerializer
 
 
 class ActionViewSet(viewsets.ModelViewSet):

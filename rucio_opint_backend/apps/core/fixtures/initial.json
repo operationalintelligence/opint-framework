@@ -39,54 +39,54 @@
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
   },
-  {
-    "model": "core.issuecause",
-    "pk": 1,
-    "fields": {
-      "cause": "Either a permission issue or for DPM sites well known DPM issue due to Apache",
-      "last_modified": "2019-08-01T12:00:00+00:00"
-    }
-  },
-  {
-    "model": "core.issuecause",
-    "pk": 2,
-    "fields": {
-      "cause": "Permission issue on a file or directory",
-      "last_modified": "2019-08-01T12:00:00+00:00"
-    }
-  },
-  {
-    "model": "core.issuecause",
-    "pk": 3,
-    "fields": {
-      "cause": "Problem due to Rucio/FTS that can not finish the jobs after 4 days",
-      "last_modified": "2019-08-01T12:00:00+00:00"
-    }
-  },
-  {
-    "model": "core.issuecause",
-    "pk": 4,
-    "fields": {
-      "cause": "Space token full",
-      "last_modified": "2019-08-01T12:00:00+00:00"
-    }
-  },
-  {
-    "model": "core.issuecause",
-    "pk": 5,
-    "fields": {
-      "cause": "Storage overloaded",
-      "last_modified": "2019-08-01T12:00:00+00:00"
-    }
-  },
-  {
-    "model": "core.issuecause",
-    "pk": 6,
-    "fields": {
-      "cause": "Problem with the WebDAV door",
-      "last_modified": "2019-08-01T12:00:00+00:00"
-    }
-  },
+//  {
+//    "model": "core.issuecause",
+//    "pk": 1,
+//    "fields": {
+//      "cause": "Either a permission issue or for DPM sites well known DPM issue due to Apache",
+//      "last_modified": "2019-08-01T12:00:00+00:00"
+//    }
+//  },
+//  {
+//    "model": "core.issuecause",
+//    "pk": 2,
+//    "fields": {
+//      "cause": "Permission issue on a file or directory",
+//      "last_modified": "2019-08-01T12:00:00+00:00"
+//    }
+//  },
+//  {
+//    "model": "core.issuecause",
+//    "pk": 3,
+//    "fields": {
+//      "cause": "Problem due to Rucio/FTS that can not finish the jobs after 4 days",
+//      "last_modified": "2019-08-01T12:00:00+00:00"
+//    }
+//  },
+//  {
+//    "model": "core.issuecause",
+//    "pk": 4,
+//    "fields": {
+//      "cause": "Space token full",
+//      "last_modified": "2019-08-01T12:00:00+00:00"
+//    }
+//  },
+//  {
+//    "model": "core.issuecause",
+//    "pk": 5,
+//    "fields": {
+//      "cause": "Storage overloaded",
+//      "last_modified": "2019-08-01T12:00:00+00:00"
+//    }
+//  },
+//  {
+//    "model": "core.issuecause",
+//    "pk": 6,
+//    "fields": {
+//      "cause": "Problem with the WebDAV door",
+//      "last_modified": "2019-08-01T12:00:00+00:00"
+//    }
+//  },
   {
     "model": "core.issuecategory",
     "pk": 1,
@@ -164,8 +164,7 @@
     "pk": 1,
     "fields": {
       "category": "1",
-      "proposed_action": "1",
-      "real_cause": "1",
+      "cause": "1",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -177,8 +176,7 @@
     "pk": 2,
     "fields": {
       "category": "2",
-      "proposed_action": "1",
-      "real_cause": "2",
+      "cause": "2",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -190,8 +188,7 @@
     "pk": 3,
     "fields": {
       "category": "3",
-      "proposed_action": "1",
-      "real_cause": "2",
+      "cause": "2",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -203,8 +200,7 @@
     "pk": 4,
     "fields": {
       "category": "4",
-      "proposed_action": "2",
-      "real_cause": "3",
+      "cause": "3",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -216,8 +212,7 @@
     "pk": 5,
     "fields": {
       "category": "5",
-      "proposed_action": "3",
-      "real_cause": "4",
+      "cause": "4",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -229,8 +224,7 @@
     "pk": 6,
     "fields": {
       "category": "6",
-      "proposed_action": "3",
-      "real_cause": "4",
+      "cause": "4",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -242,8 +236,7 @@
     "pk": 7,
     "fields": {
       "category": "7",
-      "proposed_action": "1",
-      "real_cause": "5",
+      "cause": "5",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -255,8 +248,7 @@
     "pk": 8,
     "fields": {
       "category": "8",
-      "proposed_action": "1",
-      "real_cause": "6",
+      "cause": "6",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",

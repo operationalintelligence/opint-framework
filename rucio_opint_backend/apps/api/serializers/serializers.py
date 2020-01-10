@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from rucio_opint_backend.apps.core.models import TransferIssue, WorkflowIssue, Action, IssueCause, IssueCategory, Solution
+from rucio_opint_backend.apps.core.models import TransferIssue, WorkflowIssue, Action, IssueCategory, Solution
 
 
 class TransferIssueSerializer(serializers.ModelSerializer):
@@ -34,20 +34,20 @@ class ActionSerializer(serializers.ModelSerializer):
         return guest
 
 
-class IssueCauseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = IssueCause
-        fields = ['id', 'cause', 'last_modified']
+# class IssueCauseSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = IssueCause
+#         fields = ['id', 'cause', 'last_modified']
 
 
 class IssueCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = IssueCategory
-        fields = ['id', 'amount', 'regex', 'cause', 'last_modified']
+        fields = ['id', 'amount', 'regex', 'last_modified']
 
 
 class SolutionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Solution
-        fields = ['id', 'category', 'proposed_action', 'solution', 'real_cause', 'propability',
+        fields = ['id', 'category', 'solution', 'propability',
                   'score', 'affected_site', 'last_modified']
