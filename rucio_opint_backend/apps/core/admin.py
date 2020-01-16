@@ -1,10 +1,6 @@
 from django.contrib import admin
 
-from .models import WorkflowIssue, TransferIssue, IssueCategory, Action, Solution
-
-
-class WorkflowIssueAdmin(admin.ModelAdmin):
-    list_display = ['id', 'message', 'workflow', 'category', 'type', 'status', 'last_modified']
+from .models import TransferIssue, IssueCategory, Action, Solution
 
 
 class TransferIssueAdmin(admin.ModelAdmin):
@@ -28,7 +24,6 @@ class SolutionAdmin(admin.ModelAdmin):
                     'propability', 'score', 'last_modified', 'affected_site']
 
 
-admin.site.register(WorkflowIssue, WorkflowIssueAdmin)
 admin.site.register(TransferIssue, TransferIssueAdmin)
 admin.site.register(IssueCategory, IssueCategoryAdmin)
 # admin.site.register(IssueCause, IssueCauseAdmin)

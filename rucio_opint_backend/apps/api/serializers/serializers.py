@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from rucio_opint_backend.apps.core.models import TransferIssue, WorkflowIssue, Action, IssueCategory, Solution
+from rucio_opint_backend.apps.core.models import TransferIssue, Action, IssueCategory, Solution
+from rucio_opint_backend.apps.workflow_management.models import WorkflowIssue
 
 
 class TransferIssueSerializer(serializers.ModelSerializer):

@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'filters',
     'corsheaders',
     'rucio_opint_backend.apps.core',
+    'rucio_opint_backend.apps.workflow_management',
     'rucio_opint_backend.apps.users',
     'rucio_opint_backend.apps.api',
     'rucio_opint_backend.apps.crons',
