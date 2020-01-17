@@ -32,7 +32,7 @@ if MODE == "dev":
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'rucio_opint',
+            'NAME': '../rucio_opint',
         }
     }
 elif MODE == "prod":
