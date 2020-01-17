@@ -34,12 +34,11 @@ class WorkflowIssueViewSet(FiltersMixin, viewsets.ModelViewSet):
     queryset = WorkflowIssue.objects.all()
     serializer_class = WorkflowIssueSerializer
     filter_backends = (filters.OrderingFilter,)
-    ordering_fields = ('id', 'last_modified', 'workflow')
+    ordering_fields = ('id', 'last_modified')
     ordering = ('id',)
     filter_mappings = {
         'id': 'id',
         'message': 'message__icontains',
-        'workflow': 'workflow__icontains',
         'categories': 'category'
     }
     filter_validation_schema = issue_query_schema

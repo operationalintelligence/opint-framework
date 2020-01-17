@@ -7,7 +7,7 @@ from rucio_opint_backend.apps.data_management.models import TransferIssue
 class WorkflowIssueMetadataSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkflowIssueMetadata
-        fields = ['key', 'value']
+        fields = ['id', 'key', 'value']
 
 
 class TransferIssueSerializer(serializers.ModelSerializer):
@@ -17,10 +17,11 @@ class TransferIssueSerializer(serializers.ModelSerializer):
 
 
 class WorkflowIssueSerializer(serializers.ModelSerializer):
-    metadata = WorkflowIssueMetadataSerializer(read_only=True, many=True)
+    metadata = WorkflowIssueMetadataSerializer(read_only=True, many=True, source='workflowissuemetadata_set')
+
     class Meta:
         model = WorkflowIssue
-        fields = ['id', 'message', 'workflow', 'category', 'amount', 'type', 'status', 'metadata', 'last_modified']
+        fields = ['id', 'message', 'category', 'status', 'metadata', 'last_modified']
 
 
 class ActionSerializer(serializers.ModelSerializer):
