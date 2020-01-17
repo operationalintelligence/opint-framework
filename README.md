@@ -34,7 +34,8 @@ The following environmental variables can be set:
 ```commandline
 API_KEY: The key for Monit Grafana's API
 DB_PASS: The pass for the produciton database.
-For Development you can enable sqlite from `rucio_opint_backend/apps/core/settings.py` 
+For Development you can enable sqlite populating the MODE env variable:
+export MODE=dev 
 ```
 Create DB:
 ```commandline
