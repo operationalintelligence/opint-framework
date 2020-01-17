@@ -1,8 +1,9 @@
 from rest_framework import viewsets, filters
 from filters.mixins import FiltersMixin
 
-from rucio_opint_backend.apps.core.models import TransferIssue, Action, IssueCategory, Solution
+from rucio_opint_backend.apps.core.models import Action, IssueCategory, Solution
 from rucio_opint_backend.apps.workflow_management.models import WorkflowIssue
+from rucio_opint_backend.apps.data_management.models import TransferIssue
 
 from rucio_opint_backend.apps.api.serializers import (TransferIssueSerializer, WorkflowIssueSerializer, ActionSerializer,
                                                       IssueCategorySerializer, SolutionSerializer)

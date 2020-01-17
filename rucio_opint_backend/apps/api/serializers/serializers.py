@@ -1,6 +1,13 @@
 from rest_framework import serializers
-from rucio_opint_backend.apps.core.models import TransferIssue, Action, IssueCategory, Solution
-from rucio_opint_backend.apps.workflow_management.models import WorkflowIssue
+from rucio_opint_backend.apps.core.models import Action, IssueCategory, Solution
+from rucio_opint_backend.apps.workflow_management.models import WorkflowIssue, WorkflowIssueMetadata
+from rucio_opint_backend.apps.data_management.models import TransferIssue
+
+
+class WorkflowIssueMetadataSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkflowIssueMetadata
+        fields = ['key', 'value']
 
 
 class TransferIssueSerializer(serializers.ModelSerializer):
@@ -10,9 +17,10 @@ class TransferIssueSerializer(serializers.ModelSerializer):
 
 
 class WorkflowIssueSerializer(serializers.ModelSerializer):
+    metadata = WorkflowIssueMetadataSerializer(read_only=True, many=True)
     class Meta:
         model = WorkflowIssue
-        fields = ['id', 'message', 'workflow', 'category', 'amount', 'type', 'status', 'last_modified']
+        fields = ['id', 'message', 'workflow', 'category', 'amount', 'type', 'status', 'metadata', 'last_modified']
 
 
 class ActionSerializer(serializers.ModelSerializer):

@@ -1,1 +1,1 @@
-from .models import WorkflowIssue
+from .models import WorkflowIssue, WorkflowIssueMetadata  # noqa: F401
