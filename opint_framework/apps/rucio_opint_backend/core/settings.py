@@ -77,7 +77,7 @@ INSTALLED_APPS = [
     'filters',
     'corsheaders',
     'opint_framework.apps.core',
-    'opint_framework.apps.workflow_management',
+    'opint_framework.apps.workload_jobsbuster',
     'opint_framework.apps.data_management',
     'opint_framework.apps.users',
     'opint_framework.apps.api',
@@ -100,7 +100,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware'
 ]
 
-ROOT_URLCONF = 'opint_framework.apps.core.urls'
+ROOT_URLCONF = 'opint_framework.apps.rucio_opint_backend.core.urls'
 
 TEMPLATES = [
     {
