@@ -2,26 +2,26 @@
 
 ## Description
 
-Rucio OpInt backend.
+OpInt Framework.
 
 ## Installation
 
 Fork the repo into your personal project and clone the project.
 ```commandline
-cd ~/projects/rucio-opint/
-git clone https://github.com/operationalintelligence/rucio-opint-backend
+cd ~/projects/opint-framework/
+git clone https://github.com/operationalintelligence/opint-framework
 ```
 
 Create a new python3 virtual environment and activate it:
 ```commandline
-virtualenv -p python3 ~/environments/rucio-opint-backend
-source ~/environments/rucio-opint-backend/bin/activate
+virtualenv -p python3 ~/environments/opint-framework
+source ~/environments/opint-framework/bin/activate
 ```
 
 
 Install Python dependencies:
 ```commandline
-cd ~/projects/rucio-opint/rucio-opint-backend
+cd ~/projects/opint-framework/opint-framework
 pip install -r requirements.txt
 ``` 
 
@@ -51,7 +51,7 @@ python manage.py loaddata initial
 ## Running the app:
 Navigate to the project's directory:
 ```commandline
-cd ~/projects/rucio-opint-frontend
+cd ~/projects/opint-framework
 ```
 Run the django server:
 ```commandline
