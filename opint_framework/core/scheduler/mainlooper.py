@@ -19,7 +19,7 @@ else:
 
 
 # This function provides dict of modules to execute
-def scanAvaliableApps():
+def scanAvailableApps():
 
     modulesToSchedule = {} #Pairs module names / poll time
 
@@ -48,7 +48,7 @@ def run_threaded(job_func):
 
 
 def main():
-    modulesToSchedule = scanAvaliableApps()
+    modulesToSchedule = scanAvailableApps()
     logging.debug("The following agents found: {}".format(modulesToSchedule))
 
     for agentname, polltime in modulesToSchedule.items():
