@@ -1,6 +1,6 @@
 import difflib
 
-from rucio_opint_backend.apps.core.models import IssueCategory
+from opint_framework.apps.core.models import IssueCategory
 
 
 def categorize_issue(issue):

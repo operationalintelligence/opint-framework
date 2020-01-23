@@ -1,4 +1,4 @@
-"""rucio_opint_backend URL Configuration
+"""opint_framework URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/2.2/topics/http/urls/
@@ -18,6 +18,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('rucio_opint_backend.apps.api.urls')),
-    path('auth/', include('rucio_opint_backend.apps.users.urls')),
+    path('api/', include('opint_framework.apps.api.urls')),
+    path('auth/', include('opint_framework.apps.users.urls')),
 ]

@@ -17,7 +17,7 @@ services:
     volumes:
       - .:/usr/src/app
     environment:
-      - DJANGO_SETTINGS_MODULE=rucio_opint_backend.apps.core.settings
+      - DJANGO_SETTINGS_MODULE=opint_framework.apps.core.settings
       - ADMIN_PASSWORD=thereisnospoon
       - POSTGRES_DB_DEV=postgres
       - POSTGRES_USER_DEV=postgres

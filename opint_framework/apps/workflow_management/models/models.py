@@ -1,5 +1,5 @@
 from django.db import models
-from rucio_opint_backend.apps.core.models import IssueCategory, Action, Solution, ISSUE_STATUS
+from opint_framework.apps.core.models import IssueCategory, Action, Solution, ISSUE_STATUS
 
 
 class WorkflowIssue(models.Model):

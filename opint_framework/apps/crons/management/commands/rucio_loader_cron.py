@@ -4,7 +4,7 @@ import requests
 from django.core.management.base import BaseCommand
 from django.conf import settings
 
-from rucio_opint_backend.apps.utils.register import register_transfer_issue
+from opint_framework.apps.utils.register import register_transfer_issue
 
 
 class Command(BaseCommand):

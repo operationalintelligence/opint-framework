@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from rucio_opint_backend.apps.core.models import Action, IssueCategory, Solution
-from rucio_opint_backend.apps.workflow_management.models import WorkflowIssue, WorkflowIssueMetadata
-from rucio_opint_backend.apps.data_management.models import TransferIssue
+from opint_framework.apps.core.models import Action, IssueCategory, Solution
+from opint_framework.apps.workflow_management.models import WorkflowIssue, WorkflowIssueMetadata
+from opint_framework.apps.data_management.models import TransferIssue
 
 
 class WorkflowIssueMetadataSerializer(serializers.ModelSerializer):

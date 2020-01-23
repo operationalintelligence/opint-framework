@@ -27,7 +27,7 @@ pip install -r requirements.txt
 
 Export settings module:
 ```commandline
-export DJANGO_SETTINGS_MODULE='rucio_opint_backend.apps.core.settings'
+export DJANGO_SETTINGS_MODULE='opint_framework.apps.core.settings'
 ```
 
 The following environmental variables can be set:

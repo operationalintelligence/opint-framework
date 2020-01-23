@@ -1,13 +1,13 @@
 from rest_framework import viewsets, filters
 from filters.mixins import FiltersMixin
 
-from rucio_opint_backend.apps.core.models import Action, IssueCategory, Solution
-from rucio_opint_backend.apps.workflow_management.models import WorkflowIssue
-from rucio_opint_backend.apps.data_management.models import TransferIssue
+from opint_framework.apps.core.models import Action, IssueCategory, Solution
+from opint_framework.apps.workflow_management.models import WorkflowIssue
+from opint_framework.apps.data_management.models import TransferIssue
 
-from rucio_opint_backend.apps.api.serializers import (TransferIssueSerializer, WorkflowIssueSerializer, ActionSerializer,
-                                                      IssueCategorySerializer, SolutionSerializer)
-from rucio_opint_backend.apps.api.validations import issue_query_schema
+from opint_framework.apps.api.serializers import (TransferIssueSerializer, WorkflowIssueSerializer, ActionSerializer,
+                                                  IssueCategorySerializer, SolutionSerializer)
+from opint_framework.apps.api.validations import issue_query_schema
 
 
 class TransferIssueViewSet(FiltersMixin, viewsets.ModelViewSet):

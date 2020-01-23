@@ -1,7 +1,7 @@
 import time
 
-from rucio_opint_backend.apps.core.models import TransferIssue, IssueCategory
-from rucio_opint_backend.apps.utils.categorizer import categorize_issue
+from opint_framework.apps.core.models import TransferIssue, IssueCategory
+from opint_framework.apps.utils.categorizer import categorize_issue
 
 
 def register_transfer_issue(issue):

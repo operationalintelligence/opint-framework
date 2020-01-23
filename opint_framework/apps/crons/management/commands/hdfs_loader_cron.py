@@ -8,8 +8,8 @@ from pyspark.sql import SparkSession
 
 from django.core.management.base import BaseCommand
 
-from rucio_opint_backend.apps.utils.tools import parse_date, get_hostname
-from rucio_opint_backend.apps.utils.register import register_transfer_issue
+from opint_framework.apps.utils.tools import parse_date, get_hostname
+from opint_framework.apps.utils.register import register_transfer_issue
 
 
 class Command(BaseCommand):
