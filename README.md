@@ -27,7 +27,7 @@ pip install -r requirements.txt
 
 Export settings module:
 ```commandline
-export DJANGO_SETTINGS_MODULE='opint_framework.apps.core.settings'
+export DJANGO_SETTINGS_MODULE='opint_framework.core.settings'
 ```
 
 The following environmental variables can be set:
@@ -39,7 +39,7 @@ export MODE=dev
 ```
 Create DB:
 ```commandline
-python manage.py makemigrations core
+python manage.py makemigrations core data_management workload_jobsbuster users api
 python manage.py migrate
 ```
 
@@ -58,7 +58,7 @@ Run the django server:
 python manage.py runserver
 ```
 
-## Fetching information:
+## Fetching information: (Currently deprecated. To be ported to new Scheduler paradigm)
 In order to fetch issues from HDFS:
 ```commandline
 python manage.py hdfs_loader_cron
