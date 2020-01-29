@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from opint_framework.apps.core.models import Action, IssueCategory, Solution
-from opint_framework.apps.workflow_management.models import WorkflowIssue, WorkflowIssueMetadata
+from opint_framework.core.models import Action, IssueCategory, Solution
+from opint_framework.apps.workload_jobsbuster.models import WorkflowIssue, WorkflowIssueMetadata
 from opint_framework.apps.data_management.models import TransferIssue
 
 

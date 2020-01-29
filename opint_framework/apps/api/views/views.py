@@ -1,8 +1,8 @@
 from rest_framework import viewsets, filters
 from filters.mixins import FiltersMixin
 
-from opint_framework.apps.core.models import Action, IssueCategory, Solution
-from opint_framework.apps.workflow_management.models import WorkflowIssue
+from opint_framework.core.models import Action, IssueCategory, Solution
+from opint_framework.apps.workload_jobsbuster.models import WorkflowIssue
 from opint_framework.apps.data_management.models import TransferIssue
 
 from opint_framework.apps.api.serializers import (TransferIssueSerializer, WorkflowIssueSerializer, ActionSerializer,

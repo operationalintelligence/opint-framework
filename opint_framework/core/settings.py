@@ -77,7 +77,7 @@ INSTALLED_APPS = [
     'filters',
     'corsheaders',
     'opint_framework.core',
-    'opint_framework.apps.workload_jobsbuter',
+    'opint_framework.apps.workload_jobsbuster',
     'opint_framework.apps.data_management',
     'opint_framework.apps.users',
     'opint_framework.apps.api',
@@ -99,7 +99,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware'
 ]
 
-ROOT_URLCONF = 'opint_framework.apps.core.urls'
+ROOT_URLCONF = 'opint_framework.core.urls'
 
 TEMPLATES = [
     {
@@ -117,7 +117,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'opint_framework.apps.core.wsgi.application'
+WSGI_APPLICATION = 'opint_framework.core.wsgi.application'
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
