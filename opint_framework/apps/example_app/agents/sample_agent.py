@@ -2,6 +2,7 @@ from opint_framework.core.prototypes.BaseAgent import BaseAgent
 import threading
 import time
 
+
 class SampleAgent(BaseAgent):
     lock = threading.RLock()
 

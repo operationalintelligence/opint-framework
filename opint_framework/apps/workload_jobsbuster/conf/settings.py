@@ -5,6 +5,6 @@ IS_ACTIVATED = False
 # Only once instance of each agent could be executed at the same time
 #
 
-POLLING_TIME  = {
+POLLING_TIME = {
     "jobscollector": 60,
 }

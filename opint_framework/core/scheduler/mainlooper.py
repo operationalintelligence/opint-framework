@@ -5,7 +5,6 @@ import threading
 import time
 import inspect
 
-from opint_framework.core.scheduler.BaseAgent import BaseAgent
 from django.conf import settings
 import opint_framework.apps
 from importlib import util as importutil
@@ -21,7 +20,7 @@ else:
 # This function provides dict of modules to execute
 def scanAvailableApps():
 
-    modulesToSchedule = {} #Pairs module names / poll time
+    modulesToSchedule = {}  #Pairs module names / poll time
 
     # We walk over installed apps in the top apps dir
     appsDirName = os.path.dirname(opint_framework.apps.__file__)
@@ -64,7 +63,6 @@ def main():
         schedule.run_pending()
         time.sleep(1)
 
+
 if __name__ == "__main__":
     main()
-
-

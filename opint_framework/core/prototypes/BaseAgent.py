@@ -2,6 +2,7 @@
 # This is a Base Class for agents
 #
 
+
 class BaseAgent(object):
     def init(self):
         raise NotImplementedError("Must override")
@@ -15,4 +16,3 @@ class BaseAgent(object):
                 self.processCycle()
             finally:
                 self.lock.release()
-
