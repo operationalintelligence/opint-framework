@@ -76,12 +76,11 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.cern',
     'filters',
     'corsheaders',
-    'opint_framework.apps.core',
-    'opint_framework.apps.workload_jobsbuster',
+    'opint_framework.core',
+    'opint_framework.apps.workload_jobsbuter',
     'opint_framework.apps.data_management',
     'opint_framework.apps.users',
     'opint_framework.apps.api',
-    'opint_framework.apps.crons',
     'opint_framework.apps.utils'
 ]
 
@@ -100,7 +99,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware'
 ]
 
-ROOT_URLCONF = 'opint_framework.apps.rucio_opint_backend.core.urls'
+ROOT_URLCONF = 'opint_framework.apps.core.urls'
 
 TEMPLATES = [
     {
@@ -187,3 +186,11 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 CORS_ORIGIN_ALLOW_ALL = True
 # # Allow react dev server to query
 # CORS_ORIGIN_WHITELIST = ['http://localhost:8080', 'http://rucio-opint-ui.web.cern.ch']
+
+
+# Global Scheduler Configuration
+SCHEDULER_SCAN_PATH = "apps"
+
+# Path to print logs. None means console output
+LOG_PATH = None
+#LOG_PATH = "./scheduler.log"

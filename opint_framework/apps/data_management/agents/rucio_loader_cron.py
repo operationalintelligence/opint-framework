@@ -1,13 +1,12 @@
 import time
 import requests
 
-from django.core.management.base import BaseCommand
 from django.conf import settings
 
-from opint_framework.apps.rucio_opint_backend.utils import register_transfer_issue
+from opint_framework.apps.utils.register import register_transfer_issue
 
 
-class Command(BaseCommand):
+class RucioLoaderCron(BaseCommand):
     help = 'Runs the Rucio fetching job'
 
     # function to retrieve the specific error message between two sites and with the event type

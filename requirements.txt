@@ -13,3 +13,4 @@ whitenoise
 gunicorn
 psycopg2-binary
 djangorestframework-jwt
+schedule

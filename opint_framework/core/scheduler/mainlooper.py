@@ -5,8 +5,8 @@ import threading
 import time
 import inspect
 
-from opint_framework.core.prototypes import BaseAgent
-from opint_framework.conf import settings
+from opint_framework.core.scheduler.BaseAgent import BaseAgent
+from django.conf import settings
 import opint_framework.apps
 from importlib import util as importutil
 
@@ -26,15 +26,15 @@ def scanAvailableApps():
     # We walk over installed apps in the top apps dir
     appsDirName = os.path.dirname(opint_framework.apps.__file__)
     for modulename in os.listdir(appsDirName):
-
+        print(modulename)
         # We check existence of the settings file
-        if not os.path.isfile(appsDirName + '/' + modulename+'/conf/settings.py'):
+        if not os.path.isfile(appsDirName + '/' + modulename + '/settings.py'):
             continue
-        modulespec = importutil.find_spec("opint_framework.apps."+modulename+'.conf.settings')
+        modulespec = importutil.find_spec("opint_framework.apps."+modulename+'.settings')
         if modulespec:
             app_conf = importutil.module_from_spec(modulespec)
             modulespec.loader.exec_module(app_conf)
-            if hasattr(app_conf, 'IS_ACTIVATED') and app_conf.IS_ACTIVATED and hasattr(app_conf, 'POLLING_TIME'):
+            if hasattr(app_conf, 'ENABLE_SCHEDULER') and app_conf.IS_ACTIVATED and hasattr(app_conf, 'POLLING_TIME'):
                 for agentname, polltime in app_conf.POLLING_TIME.items():
                     modulesToSchedule["opint_framework.apps."+modulename+'.agents.'+agentname] = polltime
     return modulesToSchedule
