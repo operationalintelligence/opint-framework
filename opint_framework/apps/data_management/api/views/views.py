@@ -1,4 +1,4 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, mixins
 from filters.mixins import FiltersMixin
 
 from opint_framework.core.models import Action, IssueCategory, Solution
@@ -52,7 +52,7 @@ class TransferIssueViewSet(FiltersMixin, viewsets.ModelViewSet):
 #     serializer_class = IssueCauseSerializer
 
 
-class ActionViewSet(viewsets.ModelViewSet):
+class ActionViewSet(viewsets.ModelViewSet, mixins.ListModelMixin):
     """
     API endpoint that allows Actions to be viewed or edited.
     """
