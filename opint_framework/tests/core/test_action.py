@@ -17,7 +17,7 @@ class ActionViewSetTestCase(APITestCase):
 
     def test_create_action(self):
         action_title = 'Test Action'
-        data = {'action': action_title, 'last_modified': datetime.today()}
+        data = {'action': action_title}
         res = self.client.post(self.list_url, data, format='json')
 
         ser = ActionSerializer(data=res.data)
@@ -25,6 +25,7 @@ class ActionViewSetTestCase(APITestCase):
             action = Action(**ser.validated_data)
 
         self.assertEquals(res.status_code, status.HTTP_201_CREATED)
+        self.assertEquals(Action.objects.count(), 1)
         self.assertEquals(action.action, action_title)
 
     def test_list_actions_populated(self):
