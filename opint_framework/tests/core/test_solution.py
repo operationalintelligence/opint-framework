@@ -1,12 +1,8 @@
-import json
-from datetime import datetime
-
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
 from opint_framework.core.models import Action, IssueCategory, Solution
-from opint_framework.apps.api.serializers import SolutionSerializer
 
 
 class ActionViewSetTestCase(APITestCase):
@@ -35,7 +31,7 @@ class ActionViewSetTestCase(APITestCase):
         action = Action.objects.create(action='Test Action')
         category = IssueCategory.objects.create(regex='REGEX')
 
-        solution = Solution.objects.create(solution=action, category=category)
+        Solution.objects.create(solution=action, category=category)
 
         res = self.client.get(self.list_url)
 

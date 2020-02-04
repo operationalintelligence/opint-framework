@@ -1,11 +1,8 @@
-from datetime import datetime
-
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
 from opint_framework.core.models import IssueCategory
-from opint_framework.apps.api.serializers import IssueCategorySerializer
 
 
 class ActionViewSetTestCase(APITestCase):
@@ -19,13 +16,12 @@ class ActionViewSetTestCase(APITestCase):
         data = {'regex': 'REGEX'}
         res = self.client.post(self.list_url, data, format='json')
 
-
         self.assertEquals(res.status_code, status.HTTP_201_CREATED)
         self.assertEquals(IssueCategory.objects.count(), 1)
         self.assertEquals(IssueCategory.objects.first().regex, 'REGEX')
 
     def test_list_issuecategory_populated(self):
-        category = IssueCategory.objects.create(regex='REGEX')
+        IssueCategory.objects.create(regex='REGEX')
 
         res = self.client.get(self.list_url)
 

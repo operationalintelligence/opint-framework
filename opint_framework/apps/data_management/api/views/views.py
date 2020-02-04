@@ -1,4 +1,4 @@
-from rest_framework import viewsets, filters, mixins
+from rest_framework import viewsets, filters
 from filters.mixins import FiltersMixin
 
 from opint_framework.core.models import Action, IssueCategory, Solution
