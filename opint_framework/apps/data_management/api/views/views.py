@@ -52,7 +52,7 @@ class TransferIssueViewSet(FiltersMixin, viewsets.ModelViewSet):
 #     serializer_class = IssueCauseSerializer
 
 
-class ActionViewSet(viewsets.ModelViewSet, mixins.ListModelMixin):
+class ActionViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows Actions to be viewed or edited.
     """
