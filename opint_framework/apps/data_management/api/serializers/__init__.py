@@ -1,2 +1,2 @@
-from .serializers import (TransferIssueSerializer, WorkflowIssueSerializer, ActionSerializer,  # noqa: F401
+from .serializers import (TransferIssueSerializer, ActionSerializer,  # noqa: F401
                           IssueCategorySerializer, SolutionSerializer)  # noqa: F401

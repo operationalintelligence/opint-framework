@@ -79,7 +79,7 @@ INSTALLED_APPS = [
     'opint_framework.core',
     'opint_framework.apps.workload_jobsbuster',
     'opint_framework.apps.data_management',
-    'opint_framework.apps.users',
+    'opint_framework.core.users',
     'opint_framework.apps.api',
     'opint_framework.apps.utils'
 ]

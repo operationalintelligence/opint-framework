@@ -2,12 +2,12 @@ from django.urls import path, include
 
 from rest_framework import routers
 
-from .views import TransferIssueViewSet, WorkflowIssueViewSet, ActionViewSet, IssueCategoryViewSet, SolutionViewSet
+from opint_framework.apps.data_management.api.views import TransferIssueViewSet, ActionViewSet, IssueCategoryViewSet, SolutionViewSet
 
 
 router = routers.DefaultRouter()
 router.register(r'issues/transfer', TransferIssueViewSet)
-router.register(r'issues/workflow', WorkflowIssueViewSet)
+# router.register(r'issues/workflow', WorkflowIssueViewSet)
 router.register(r'actions', ActionViewSet)
 # router.register(r'issuecauses', IssueCauseViewSet)
 router.register(r'issuecategories', IssueCategoryViewSet)
