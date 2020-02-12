@@ -5,8 +5,8 @@ import traceback
 import requests
 from pyspark.sql import SparkSession
 
-from opint_framework.apps.utils.tools import parse_date, get_hostname
-from opint_framework.apps.utils.register import register_transfer_issue
+from opint_framework.apps.data_management.utils import parse_date, get_hostname
+from opint_framework.apps.data_management.utils.register import register_transfer_issue
 
 
 class HDFSLoaderCron():

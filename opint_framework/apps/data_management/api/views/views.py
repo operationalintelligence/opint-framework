@@ -5,9 +5,9 @@ from opint_framework.core.models import Action, IssueCategory, Solution
 from opint_framework.apps.workload_jobsbuster.models import WorkflowIssue
 from opint_framework.apps.data_management.models import TransferIssue
 
-from opint_framework.apps.api.serializers import (TransferIssueSerializer, WorkflowIssueSerializer, ActionSerializer,
-                                                  IssueCategorySerializer, SolutionSerializer)
-from opint_framework.apps.api.validations import issue_query_schema
+from opint_framework.apps.data_management.api.serializers import (TransferIssueSerializer, WorkflowIssueSerializer, ActionSerializer,
+                                                                  IssueCategorySerializer, SolutionSerializer)
+from opint_framework.apps.data_management.api import issue_query_schema
 
 
 class TransferIssueViewSet(FiltersMixin, viewsets.ModelViewSet):

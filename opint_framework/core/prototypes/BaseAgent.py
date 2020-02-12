@@ -1,5 +1,5 @@
-
-# This is a Base Class for agents
+#
+# This is a Base Class for agents implementation
 #
 
 

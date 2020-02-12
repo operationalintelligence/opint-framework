@@ -1,7 +1,7 @@
 import time
 
 from opint_framework.core.models import TransferIssue, IssueCategory
-from opint_framework.apps.utils.categorizer import categorize_issue
+from opint_framework.apps.data_management.utils import categorize_issue
 
 
 def register_transfer_issue(issue):

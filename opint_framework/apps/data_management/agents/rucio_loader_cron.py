@@ -3,7 +3,7 @@ import requests
 
 from django.conf import settings
 
-from opint_framework.apps.utils.register import register_transfer_issue
+from opint_framework.apps.data_management.utils.register import register_transfer_issue
 
 
 class RucioLoaderCron():
