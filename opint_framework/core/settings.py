@@ -81,7 +81,8 @@ INSTALLED_APPS = [
     'opint_framework.apps.data_management',
     'opint_framework.core.users',
     'opint_framework.apps.api',
-    'opint_framework.apps.utils'
+    'opint_framework.apps.utils',
+    'opint_framework.apps.example_app'
 ]
 
 SITE_ID = 1
