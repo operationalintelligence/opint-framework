@@ -1,4 +1,4 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets
 
 from opint_framework.apps.example_app.api.serializers import SampleSerializer
 from opint_framework.apps.example_app.models import SampleModel

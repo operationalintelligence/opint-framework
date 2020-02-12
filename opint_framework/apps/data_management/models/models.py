@@ -1,5 +1,5 @@
 from django.db import models
-from opint_framework.core.models import IssueCategory, Action, Solution, Issue, ISSUE_STATUS
+from opint_framework.core.models import Action, Issue
 
 
 class TransferIssue(Issue):
