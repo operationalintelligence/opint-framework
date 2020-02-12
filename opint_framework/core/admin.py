@@ -12,8 +12,7 @@ class ActionAdmin(admin.ModelAdmin):
 
 
 class SolutionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'category', 'solution',
-                    'propability', 'score', 'last_modified', 'affected_site']
+    list_display = ['id', 'solution', 'propability', 'score', 'last_modified', 'affected_site']
 
 
 admin.site.register(IssueCategory, IssueCategoryAdmin)

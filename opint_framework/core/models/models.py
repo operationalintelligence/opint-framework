@@ -51,7 +51,6 @@ class Solution(models.Model):
     Solution object.
     """
 
-    category = models.ForeignKey(IssueCategory, on_delete=models.PROTECT)
     solution = models.ForeignKey(Action, null=True, on_delete=models.PROTECT, related_name='solution_action')
     # cause = models.ForeignKey(IssueCause, null=True, on_delete=models.PROTECT)
     propability = models.FloatField(default=0, blank=True)
@@ -60,8 +59,30 @@ class Solution(models.Model):
     affected_site = models.CharField(max_length=12, choices=SITE_OPTIONS, default=SITE_OPTIONS.unknown)
     last_modified = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return str(self.id)
+
+
+class Issue(models.Model):
+    """
+    Issue object.
+    """
+
+    message = models.CharField(max_length=512)
+
+    category = models.ForeignKey(IssueCategory, null=True, on_delete=models.PROTECT)
+    solution = models.ForeignKey(Solution, null=True, verbose_name='The solution given', on_delete=models.SET_NULL)
+    action = models.ForeignKey(Action, null=True, on_delete=models.PROTECT, related_name='solution_action', verbose_name='Proposed Action')
+
+    amount = models.IntegerField(null=True, default=0)
+    type = models.CharField(max_length=128)
+    status = models.CharField(max_length=12, choices=ISSUE_STATUS, default=ISSUE_STATUS.New)
+
+    last_modified = models.DateTimeField(auto_now=True)
+
     class Meta:
-        unique_together = (('category', 'solution', 'affected_site'),)  # TODO: This needs to be verified
+        abstract = True
 
     def __str__(self):
         return str(self.id)
+
