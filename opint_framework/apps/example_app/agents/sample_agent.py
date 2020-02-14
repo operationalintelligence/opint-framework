@@ -11,4 +11,3 @@ class SampleAgent(BaseAgent):
 
     def processCycle(self):
         print("Hello World from Sample Agent")
-        time.sleep(10)

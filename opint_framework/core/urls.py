@@ -16,9 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from opint_framework.core.utils.common import getURLStoFromApps
+
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('data_management/api/', include('opint_framework.apps.data_management.urls')),
-    path('example_app/api/', include('opint_framework.apps.example_app.urls')),
-    path('auth/', include('opint_framework.core.users.urls')),
+    #path('admin/', admin.site.urls),
+    #path('auth/', include('opint_framework.core.users.urls')),
 ]
+
+for urlprefix, modulepath in getURLStoFromApps().items():
+    urlpatterns.append(path(urlprefix, include(modulepath)))

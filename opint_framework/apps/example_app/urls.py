@@ -8,3 +8,5 @@ router.register(r'sample_api', SampleViewSet)
 urlpatterns = [
     path('', include(router.urls)),
 ]
+
+#re_path(r'^jobsbuster/$', oi_views.job_problems, name='jobsBuster'),

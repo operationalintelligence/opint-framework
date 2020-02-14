@@ -11,9 +11,11 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+from opint_framework.core.utils.common import scanActiveApps
+
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))+"/..")
 
 API_KEY = os.environ.get('API_KEY')
 ALLOWED_HOSTS = ['*']
@@ -27,28 +29,6 @@ SECRET_KEY = 'i-cj+m#t+!rv6x4t1(2r^zt@@p4&x7pv)=of0xh-a6w&vs-e(1'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 MODE = os.environ.get('MODE')
-
-if MODE == "dev":
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': '../rucio_opint',
-        }
-    }
-elif MODE == "prod":
-    DATABASES = {
-        'default': {
-                'ENGINE': 'django.db.backends.mysql',
-                'NAME': os.environ.get('DB_NAME'),
-                'USER': 'admin',
-                'PASSWORD': os.environ.get('DB_PASS'),
-                'USER_CREATE': 'cric',
-                'PASSWORD_CREATE': os.environ.get('DB_PASS'),
-                'HOST': 'dbod-rucio-opint.cern.ch',
-                'PORT': '5501',
-                'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"}
-        }
-    }
 
 
 STATIC_URL = '/static/'
@@ -77,13 +57,11 @@ INSTALLED_APPS = [
     'filters',
     'corsheaders',
     'opint_framework.core',
-    'opint_framework.apps.workload_jobsbuster',
-    'opint_framework.apps.data_management',
-    'opint_framework.core.users',
-    'opint_framework.apps.api',
-    'opint_framework.apps.utils',
-    'opint_framework.apps.example_app'
 ]
+
+activeApps = scanActiveApps()
+for app in activeApps:
+    INSTALLED_APPS.append('opint_framework.apps.' + app)
 
 SITE_ID = 1
 REST_USE_JWT = True
@@ -193,5 +171,5 @@ CORS_ORIGIN_ALLOW_ALL = True
 SCHEDULER_SCAN_PATH = "apps"
 
 # Path to print logs. None means console output
-LOG_PATH = None
-#LOG_PATH = "./scheduler.log"
+#LOG_PATH = None
+LOG_PATH = "./scheduler.log"

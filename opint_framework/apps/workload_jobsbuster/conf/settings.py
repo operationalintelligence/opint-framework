@@ -1,4 +1,4 @@
-#The deployment setting which activate/deactivate all agents executing in the app
+# General activation flag
 IS_ACTIVATED = False
 
 # The time period in sec when each agent is called. It is delay between starting time
@@ -6,5 +6,8 @@ IS_ACTIVATED = False
 #
 
 POLLING_TIME = {
-    "jobscollector": 60,
+    "jobscollector": 1,
 }
+
+#The deployment setting which activate/deactivate all agents executing in the app
+ENABLE_SCHEDULER = True
