@@ -1,12 +1,11 @@
 from django.urls import path, include
 from rest_framework import routers
 from .api.views import SampleViewSet
-
-router = routers.DefaultRouter()
-router.register(r'sample_api', SampleViewSet)
+import opint_framework.apps.example_app.api.views
 
 urlpatterns = [
-    path('', include(router.urls)),
+
+    # Could be accessed as http://127.0.0.1:8000/example_app/api/
+    path("/", SampleViewSet.index, name='index'),
 ]
 
-#re_path(r'^jobsbuster/$', oi_views.job_problems, name='jobsBuster'),

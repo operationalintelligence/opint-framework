@@ -1,6 +1,8 @@
 import opint_framework.apps
 import os
 from importlib import util as importutil
+import json
+from datetime import datetime
 
 def getURLStoFromApps(modules = None):
     """
@@ -59,3 +61,7 @@ def scanActiveApps():
                 activeApps.append(modulename)
     return activeApps
 
+class DateTimeEncoder(json.JSONEncoder):
+   def default(self, o):
+       if isinstance(o, datetime):
+           return o.isoformat()
