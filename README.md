@@ -27,7 +27,7 @@ pip install -r requirements.txt
 
 Export settings module:
 ```commandline
-export DJANGO_SETTINGS_MODULE='opint_framework.core.settings'
+export DJANGO_SETTINGS_MODULE='opint_framework.conf.settings'
 ```
 
 The following environmental variables can be set:
