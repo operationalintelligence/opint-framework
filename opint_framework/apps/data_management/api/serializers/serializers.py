@@ -59,5 +59,4 @@ class IssueCategorySerializer(serializers.ModelSerializer):
 class SolutionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Solution
-        fields = ['id', 'category', 'solution', 'propability',
-                  'score', 'affected_site', 'last_modified']
+        fields = ['id', 'solution', 'propability', 'score', 'affected_site', 'last_modified']
