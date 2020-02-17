@@ -43,7 +43,7 @@ python manage.py makemigrations core data_management workload_jobsbuster users a
 python manage.py migrate
 ```
 
-Populate DB with initial data:
+Populate DB with initial data: (Currently deprecated. Data should be ported to the new models.)
 ```commandline
 python manage.py loaddata initial
 ```
