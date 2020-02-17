@@ -4,13 +4,15 @@ from importlib import util as importutil
 import json
 from datetime import datetime
 
-def getURLStoFromApps(modules = None):
+
+def getURLStoFromApps(modules=None):
     """
     :param modules:
     :return: returns URLS modules of all active apps to add to the central configuration
     """
     appsUrlsFiles = {}
-    if not modules: modules = scanActiveApps()
+    if not modules:
+        modules = scanActiveApps()
     appsDirName = os.path.dirname(opint_framework.apps.__file__)
     for modulename in modules:
         modulespec = importutil.find_spec("opint_framework.apps." + modulename + '.conf.settings')
@@ -23,13 +25,14 @@ def getURLStoFromApps(modules = None):
     return appsUrlsFiles
 
 
-def getAgentsShedule(modules = None):
+def getAgentsShedule(modules=None):
     """
     Determines active agents within list of provided applications
     :param modules: List of application names, if None scans
     :return: Dict of active agents modules names - period of scheduling in secs
     """
-    if not modules: modules = scanActiveApps()
+    if not modules:
+        modules = scanActiveApps()
     modulesToSchedule = {}  #Pairs module names / poll time
     for module in modules:
         modulespec = importutil.find_spec("opint_framework.apps." + module + '.conf.settings')
@@ -61,7 +64,8 @@ def scanActiveApps():
                 activeApps.append(modulename)
     return activeApps
 
+
 class DateTimeEncoder(json.JSONEncoder):
-   def default(self, o):
-       if isinstance(o, datetime):
-           return o.isoformat()
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()

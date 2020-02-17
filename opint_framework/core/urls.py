@@ -13,16 +13,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
 from django.urls import path, include
 
 from opint_framework.core.utils.common import getURLStoFromApps
 
 
-urlpatterns = [
-    #path('admin/', admin.site.urls),
-    #path('auth/', include('opint_framework.core.users.urls')),
-]
+urlpatterns = []
 
 for urlprefix, modulepath in getURLStoFromApps().items():
     urlpatterns.append(path(urlprefix + '/', include(modulepath)))
