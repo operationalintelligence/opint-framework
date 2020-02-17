@@ -1,3 +1,6 @@
+# General activation flag
+IS_ACTIVATED = True
+
 #The deployment setting which activate/deactivate all agents executing in the app
 ENABLE_SCHEDULER = True
 
@@ -7,3 +10,5 @@ ENABLE_SCHEDULER = True
 POLLING_TIME = {
     "sample_agent": 1,
 }
+
+API_PREFIX = "ddm/api"
