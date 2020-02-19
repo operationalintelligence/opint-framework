@@ -18,11 +18,11 @@ class ActionViewSetTestCase(APITestCase):
         data = {'solution': action.id}
         res = self.client.post(self.list_url, data, format='json')
 
+        self.assertEquals(res.status_code, status.HTTP_201_CREATED)
         self.assertEquals(Solution.objects.count(), 1)
 
         solution = Solution.objects.first()
 
-        self.assertEquals(res.status_code, status.HTTP_201_CREATED)
         self.assertEquals(solution.solution.action, 'Test Action')
 
     def test_list_solutions_populated(self):

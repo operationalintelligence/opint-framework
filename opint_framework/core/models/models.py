@@ -72,7 +72,7 @@ class Issue(models.Model):
 
     category = models.ForeignKey(IssueCategory, null=True, on_delete=models.PROTECT)
     solution = models.ForeignKey(Solution, null=True, verbose_name='The solution given', on_delete=models.SET_NULL)
-    action = models.ForeignKey(Action, null=True, on_delete=models.PROTECT, related_name='solution_action', verbose_name='Proposed Action')
+    action = models.ForeignKey(Action, null=True, on_delete=models.PROTECT, related_name='issue_action', verbose_name='Proposed Action')
 
     amount = models.IntegerField(null=True, default=0)
     type = models.CharField(max_length=128)

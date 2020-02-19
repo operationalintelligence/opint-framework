@@ -32,5 +32,4 @@ urlpatterns = [
 ]
 
 for urlprefix, modulepath in getURLStoFromApps().items():
-    print(path(urlprefix + '/', include(modulepath)))
     urlpatterns.append(path(urlprefix + '/', include(modulepath)))

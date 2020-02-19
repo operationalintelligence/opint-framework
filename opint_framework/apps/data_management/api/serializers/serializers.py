@@ -12,7 +12,7 @@ from opint_framework.apps.data_management.models import TransferIssue
 class TransferIssueSerializer(serializers.ModelSerializer):
     class Meta:
         model = TransferIssue
-        fields = ['id', 'message', 'src_site', 'dst_site', 'category', 'amount', 'type', 'status', 'last_modified']
+        fields = ['id', 'message', 'src_site', 'dst_site', 'category', 'action', 'solution', 'amount', 'type', 'status', 'last_modified']
 
 
 # class WorkflowIssueSerializer(serializers.ModelSerializer):

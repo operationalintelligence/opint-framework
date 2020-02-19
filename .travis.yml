@@ -5,5 +5,6 @@ env:
   - MODE=dev
 install: "pip install -r requirements.txt"
 script:
-  - flake8 .
-  - python manage.py test opint_framework.core.tests
+  - flake8 . # Style check
+  - python manage.py test opint_framework.core.tests # Core tests
+  - python manage.py test opint_framework.apps.data_management.tests # DDM tests

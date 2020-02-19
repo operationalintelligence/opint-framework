@@ -17,12 +17,12 @@ class ActionViewSetTestCase(APITestCase):
         action_title = 'Test Action'
         data = {'action': action_title}
         res = self.client.post(self.list_url, data, format='json')
+        self.assertEquals(res.status_code, status.HTTP_201_CREATED)
 
         ser = ActionSerializer(data=res.data)
         if ser.is_valid():
             action = Action(**ser.validated_data)
 
-        self.assertEquals(res.status_code, status.HTTP_201_CREATED)
         self.assertEquals(Action.objects.count(), 1)
         self.assertEquals(action.action, action_title)
 
