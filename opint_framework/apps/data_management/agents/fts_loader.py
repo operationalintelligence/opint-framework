@@ -3,7 +3,7 @@ import requests
 
 from opint_framework.core.scheduler import BaseAgent
 from opint_framework.core.dataproviders import HDFSLoader
-from opint_framework.apps.data_management.utils.tools import parse_date, get_hostname
+from opint_framework.apps.data_management.utils.tools import get_hostname
 from opint_framework.apps.data_management.utils.register import register_transfer_issue
 
 
