@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
-from opint_framework.core.models import Action, IssueCategory, Solution
+from opint_framework.core.models import Action, Solution
 
 
 class ActionViewSetTestCase(APITestCase):
@@ -14,9 +14,8 @@ class ActionViewSetTestCase(APITestCase):
 
     def test_create_solution(self):
         action = Action.objects.create(action='Test Action')
-        category = IssueCategory.objects.create(regex='REGEX')
 
-        data = {'solution': action.id, 'category': category.id}
+        data = {'solution': action.id}
         res = self.client.post(self.list_url, data, format='json')
 
         self.assertEquals(Solution.objects.count(), 1)
@@ -25,13 +24,11 @@ class ActionViewSetTestCase(APITestCase):
 
         self.assertEquals(res.status_code, status.HTTP_201_CREATED)
         self.assertEquals(solution.solution.action, 'Test Action')
-        self.assertEquals(solution.category.regex, 'REGEX')
 
     def test_list_solutions_populated(self):
         action = Action.objects.create(action='Test Action')
-        category = IssueCategory.objects.create(regex='REGEX')
 
-        Solution.objects.create(solution=action, category=category)
+        Solution.objects.create(solution=action)
 
         res = self.client.get(self.list_url)
 
@@ -40,9 +37,8 @@ class ActionViewSetTestCase(APITestCase):
 
     def test_solution_detail(self):
         action = Action.objects.create(action='Test Action')
-        category = IssueCategory.objects.create(regex='REGEX')
 
-        solution = Solution.objects.create(solution=action, category=category)
+        solution = Solution.objects.create(solution=action)
 
         detail_url = reverse('solution-detail', args=[solution.pk])
         res = self.client.get(detail_url)

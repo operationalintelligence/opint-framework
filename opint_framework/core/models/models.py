@@ -22,13 +22,13 @@ class IssueCategory(models.Model):
     Rucio IssueCategory object.
     """
 
-    amount = models.IntegerField(null=True, default=0)
     regex = models.CharField(max_length=512)
     # cause = models.ForeignKey(IssueCause, null=True, on_delete=models.PROTECT)
     last_modified = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = (('regex'),)
+        # app_label = 'opint_framework.core'
 
     def __str__(self):
         return str(self.id)

@@ -3,7 +3,7 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
 from opint_framework.core.models import Action
-from opint_framework.apps.api.serializers import ActionSerializer
+from opint_framework.core.api.serializers import ActionSerializer
 
 
 class ActionViewSetTestCase(APITestCase):

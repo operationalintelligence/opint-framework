@@ -1,1 +1,1 @@
-from .views import TransferIssueViewSet, ActionViewSet, IssueCategoryViewSet, SolutionViewSet  # noqa: F401
+from .views import TransferIssueViewSet  # noqa: F401

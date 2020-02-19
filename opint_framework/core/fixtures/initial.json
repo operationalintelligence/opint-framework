@@ -107,7 +107,7 @@
     "model": "core.solution",
     "pk": 1,
     "fields": {
-      "category": "1",
+      "solution": "1",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -118,7 +118,7 @@
     "model": "core.solution",
     "pk": 2,
     "fields": {
-      "category": "2",
+      "solution": "2",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -129,7 +129,7 @@
     "model": "core.solution",
     "pk": 3,
     "fields": {
-      "category": "3",
+      "solution": "1",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -140,7 +140,7 @@
     "model": "core.solution",
     "pk": 4,
     "fields": {
-      "category": "4",
+      "solution": "2",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -151,7 +151,7 @@
     "model": "core.solution",
     "pk": 5,
     "fields": {
-      "category": "5",
+      "solution": "3",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -162,7 +162,7 @@
     "model": "core.solution",
     "pk": 6,
     "fields": {
-      "category": "6",
+      "solution": "3",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -173,7 +173,7 @@
     "model": "core.solution",
     "pk": 7,
     "fields": {
-      "category": "7",
+      "solution": "1",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -184,12 +184,67 @@
     "model": "core.solution",
     "pk": 8,
     "fields": {
-      "category": "8",
+      "solution": "1",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
+  },
+  {
+    "model": "data_management.transferissue",
+    "pk": 1,
+    "fields": {
+      "src_site": "ARNES",
+      "dst_site": "FZK-LCG2",
+      "category": "2",
+      "solution": "1",
+      "action": "1",
+      "amount": "10",
+      "status": "New",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
+  },
+  {
+    "model": "data_management.transferissue",
+    "pk": 2,
+    "fields": {
+      "src_site": "GR-05-DEMOKRITOS",
+      "dst_site": "DESY-HH",
+      "category": "3",
+      "solution": "2",
+      "action": "3",
+      "amount": "15",
+      "status": "Ongoing",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
+  },
+  {
+    "model": "data_management.transferissue",
+    "pk": 3,
+    "fields": {
+      "src_site": "Crane",
+      "dst_site": "BEIJING-LCG2",
+      "category": "4",
+      "solution": "4",
+      "action": "4",
+      "amount": "3",
+      "status": "Resolved",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
+  },
+  {
+    "model": "data_management.transferissue",
+    "pk": 4,
+    "fields": {
+      "src_site": "CA-WATERLOO-T2",
+      "dst_site": "BU_ATLAS_Tier2",
+      "category": "7",
+      "solution": "7",
+      "action": "3",
+      "amount": "1",
+      "status": "New",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
   }
-
 ]

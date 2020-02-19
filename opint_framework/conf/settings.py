@@ -30,6 +30,28 @@ SECRET_KEY = 'i-cj+m#t+!rv6x4t1(2r^zt@@p4&x7pv)=of0xh-a6w&vs-e(1'
 DEBUG = True
 MODE = os.environ.get('MODE')
 
+if MODE == "dev":
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': 'rucio_opint',
+        }
+    }
+elif MODE == "prod":
+    DATABASES = {
+        'default': {
+                'ENGINE': 'django.db.backends.mysql',
+                'NAME': os.environ.get('DB_NAME'),
+                'USER': 'admin',
+                'PASSWORD': os.environ.get('DB_PASS'),
+                'USER_CREATE': 'cric',
+                'PASSWORD_CREATE': os.environ.get('DB_PASS'),
+                'HOST': 'dbod-rucio-opint.cern.ch',
+                'PORT': '5501',
+                'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"}
+        }
+    }
+
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -57,6 +79,8 @@ INSTALLED_APPS = [
     'filters',
     'corsheaders',
     'opint_framework.core',
+    'opint_framework.core.users',
+    'opint_framework.core.api',
 ]
 
 activeApps = scanActiveApps()
