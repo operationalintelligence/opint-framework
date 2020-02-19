@@ -5,7 +5,7 @@ import traceback
 
 class HDFSLoader(BaseLoader):
     """
-        Base data provider (used to load data from external sources)
+        Base HDFS loader (used to load data from HDFS sources)
     """
 
     def pull_hdfs_json(self, path, spark):
