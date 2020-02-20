@@ -39,60 +39,11 @@
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
   },
-//  {
-//    "model": "core.issuecause",
-//    "pk": 1,
-//    "fields": {
-//      "cause": "Either a permission issue or for DPM sites well known DPM issue due to Apache",
-//      "last_modified": "2019-08-01T12:00:00+00:00"
-//    }
-//  },
-//  {
-//    "model": "core.issuecause",
-//    "pk": 2,
-//    "fields": {
-//      "cause": "Permission issue on a file or directory",
-//      "last_modified": "2019-08-01T12:00:00+00:00"
-//    }
-//  },
-//  {
-//    "model": "core.issuecause",
-//    "pk": 3,
-//    "fields": {
-//      "cause": "Problem due to Rucio/FTS that can not finish the jobs after 4 days",
-//      "last_modified": "2019-08-01T12:00:00+00:00"
-//    }
-//  },
-//  {
-//    "model": "core.issuecause",
-//    "pk": 4,
-//    "fields": {
-//      "cause": "Space token full",
-//      "last_modified": "2019-08-01T12:00:00+00:00"
-//    }
-//  },
-//  {
-//    "model": "core.issuecause",
-//    "pk": 5,
-//    "fields": {
-//      "cause": "Storage overloaded",
-//      "last_modified": "2019-08-01T12:00:00+00:00"
-//    }
-//  },
-//  {
-//    "model": "core.issuecause",
-//    "pk": 6,
-//    "fields": {
-//      "cause": "Problem with the WebDAV door",
-//      "last_modified": "2019-08-01T12:00:00+00:00"
-//    }
-//  },
   {
     "model": "core.issuecategory",
     "pk": 1,
     "fields": {
       "regex": "DavPosix::unlink  HTTP 403 : Permission refused",
-      "cause": "1",
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
   },
@@ -101,7 +52,6 @@
     "pk": 2,
     "fields": {
       "regex": "Details: globus_ftp_client: the server responded with an error 500 500-System error in unlink: Permission denied  500-A system call failed: Permission denied",
-      "cause": "2",
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
   },
@@ -110,7 +60,6 @@
     "pk": 3,
     "fields": {
       "regex": "DESTINATION MAKE_PARENT srm-ifce err: Permission denied, err: [SE][Mkdir][SRM_AUTHORIZATION_FAILURE]",
-      "cause": "2",
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
   },
@@ -119,7 +68,6 @@
     "pk": 4,
     "fields": {
       "regex": "Job has been canceled because it stayed in the queue for too long",
-      "cause": "3",
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
   },
@@ -128,7 +76,6 @@
     "pk": 5,
     "fields": {
       "regex": "Space associated with the space token",
-      "cause": "4",
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
   },
@@ -137,7 +84,6 @@
     "pk": 6,
     "fields": {
       "regex": "Insufficient space left associated with token",
-      "cause": "4",
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
   },
@@ -146,7 +92,6 @@
     "pk": 7,
     "fields": {
       "regex": "globus_ftp_client: the server responded with an error 421 Service busy: Connection limit exceeded. Please try again later. Closing control connection.",
-      "cause": "5",
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
   },
@@ -155,7 +100,6 @@
     "pk": 8,
     "fields": {
       "regex": "The requested service is not available at the moment.\\Details: An unknown exception occurred.\\Details: DavPosix::unlink  Failure",
-      "cause": "6",
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
   },
@@ -163,8 +107,7 @@
     "model": "core.solution",
     "pk": 1,
     "fields": {
-      "category": "1",
-      "cause": "1",
+      "solution": "1",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -175,8 +118,7 @@
     "model": "core.solution",
     "pk": 2,
     "fields": {
-      "category": "2",
-      "cause": "2",
+      "solution": "2",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -187,8 +129,7 @@
     "model": "core.solution",
     "pk": 3,
     "fields": {
-      "category": "3",
-      "cause": "2",
+      "solution": "1",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -199,8 +140,7 @@
     "model": "core.solution",
     "pk": 4,
     "fields": {
-      "category": "4",
-      "cause": "3",
+      "solution": "2",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -211,8 +151,7 @@
     "model": "core.solution",
     "pk": 5,
     "fields": {
-      "category": "5",
-      "cause": "4",
+      "solution": "3",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -223,8 +162,7 @@
     "model": "core.solution",
     "pk": 6,
     "fields": {
-      "category": "6",
-      "cause": "4",
+      "solution": "3",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -235,8 +173,7 @@
     "model": "core.solution",
     "pk": 7,
     "fields": {
-      "category": "7",
-      "cause": "5",
+      "solution": "1",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
@@ -247,13 +184,67 @@
     "model": "core.solution",
     "pk": 8,
     "fields": {
-      "category": "8",
-      "cause": "6",
+      "solution": "1",
       "propability": "80",
       "score": "False",
       "affected_site": "unknown",
       "last_modified": "2019-08-01T12:00:00+00:00"
     }
+  },
+  {
+    "model": "data_management.transferissue",
+    "pk": 1,
+    "fields": {
+      "src_site": "ARNES",
+      "dst_site": "FZK-LCG2",
+      "category": "2",
+      "solution": "1",
+      "action": "1",
+      "amount": "10",
+      "status": "New",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
+  },
+  {
+    "model": "data_management.transferissue",
+    "pk": 2,
+    "fields": {
+      "src_site": "GR-05-DEMOKRITOS",
+      "dst_site": "DESY-HH",
+      "category": "3",
+      "solution": "2",
+      "action": "3",
+      "amount": "15",
+      "status": "Ongoing",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
+  },
+  {
+    "model": "data_management.transferissue",
+    "pk": 3,
+    "fields": {
+      "src_site": "Crane",
+      "dst_site": "BEIJING-LCG2",
+      "category": "4",
+      "solution": "4",
+      "action": "4",
+      "amount": "3",
+      "status": "Resolved",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
+  },
+  {
+    "model": "data_management.transferissue",
+    "pk": 4,
+    "fields": {
+      "src_site": "CA-WATERLOO-T2",
+      "dst_site": "BU_ATLAS_Tier2",
+      "category": "7",
+      "solution": "7",
+      "action": "3",
+      "amount": "1",
+      "status": "New",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
   }
-
 ]

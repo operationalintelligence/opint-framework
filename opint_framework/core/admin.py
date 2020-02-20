@@ -4,7 +4,7 @@ from .models import IssueCategory, Action, Solution
 
 
 class IssueCategoryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'regex', 'amount', 'last_modified']
+    list_display = ['id', 'regex', 'last_modified']
 
 
 class ActionAdmin(admin.ModelAdmin):

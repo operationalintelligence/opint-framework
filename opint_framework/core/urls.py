@@ -15,10 +15,15 @@ Including another URLconf
 """
 from django.urls import path, include
 
+from rest_framework import routers
+
 from opint_framework.core.utils.common import getURLStoFromApps
 
+router = routers.DefaultRouter()
 
-urlpatterns = []
+urlpatterns = [
+    path('core/api/', include('opint_framework.core.api.urls')),
+]
 
 for urlprefix, modulepath in getURLStoFromApps().items():
     urlpatterns.append(path(urlprefix + '/', include(modulepath)))
