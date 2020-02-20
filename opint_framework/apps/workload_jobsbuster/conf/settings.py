@@ -1,3 +1,5 @@
+from pathlib import Path
+
 # General activation flag
 IS_ACTIVATED = True
 
@@ -13,3 +15,17 @@ POLLING_TIME = {
 ENABLE_SCHEDULER = False
 
 API_PREFIX = "jobsbuster/api"
+
+
+# Atlas settings
+DB_HOST = 'localhost'
+DB_PORT = '10011'
+DB_SERV_NAME = 'adcr.cern.ch'
+
+# To be imported from additional settings
+DB_PASS = ''
+DB_USER = ''
+
+exec(open(str(Path.home())+"/private/db_settings.py").read())
+datafilespath = "/tmp"
+
