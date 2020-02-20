@@ -18,17 +18,28 @@ from django.urls import path, include
 from rest_framework import routers
 
 from opint_framework.core.utils.common import getURLStoFromApps
-from opint_framework.core.api.views import (ActionViewSet, IssueCategoryViewSet,
-                                            SolutionViewSet)
+
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+
+class DocsView(APIView):
+    """
+    RESTFul Documentation
+    """
+    def get(self, request, *args, **kwargs):
+        apidocs = {'core/api': request.build_absolute_uri('core/api'),
+                   }
+        for urlprefix in getURLStoFromApps():
+            apidocs[urlprefix] = request.build_absolute_uri(urlprefix)
+        return Response(apidocs)
+
 
 router = routers.DefaultRouter()
-router.register(r'actions', ActionViewSet)
-# router.register(r'issuecauses', IssueCauseViewSet)
-router.register(r'issuecategories', IssueCategoryViewSet)
-router.register(r'solutions', SolutionViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('', DocsView.as_view()),
+    path('core/api/', include('opint_framework.core.api.urls')),
 ]
 
 for urlprefix, modulepath in getURLStoFromApps().items():
