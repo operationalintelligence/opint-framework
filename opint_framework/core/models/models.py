@@ -28,7 +28,6 @@ class IssueCategory(models.Model):
 
     class Meta:
         unique_together = (('regex'),)
-        # app_label = 'opint_framework.core'
 
     def __str__(self):
         return str(self.id)
