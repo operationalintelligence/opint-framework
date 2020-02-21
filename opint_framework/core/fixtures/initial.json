@@ -192,12 +192,12 @@
     }
   },
   {
-    "model": "data_management.transferissue",
+    "model": "core.issue",
     "pk": 1,
     "fields": {
-      "src_site": "ARNES",
-      "dst_site": "FZK-LCG2",
       "category": "2",
+      "message": "m1",
+      "type": "ddm",
       "solution": "1",
       "action": "1",
       "amount": "10",
@@ -206,12 +206,12 @@
     }
   },
   {
-    "model": "data_management.transferissue",
+    "model": "core.issue",
     "pk": 2,
     "fields": {
-      "src_site": "GR-05-DEMOKRITOS",
-      "dst_site": "DESY-HH",
       "category": "3",
+      "message": "m2",
+      "type": "ddm",
       "solution": "2",
       "action": "3",
       "amount": "15",
@@ -220,17 +220,58 @@
     }
   },
   {
+    "model": "core.issue",
+    "pk": 3,
+    "fields": {
+      "category": "4",
+      "solution": "4",
+      "message": "m3",
+      "type": "ddm",
+      "action": "4",
+      "amount": "3",
+      "status": "Resolved",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
+  },
+  {
+    "model": "core.issue",
+    "pk": 4,
+    "fields": {
+      "category": "7",
+      "solution": "7",
+      "message": "m4",
+      "type": "ddm",
+      "action": "3",
+      "amount": "1",
+      "status": "New",
+      "last_modified": "2019-08-01T12:00:00+00:00"
+    }
+  },
+    {
+    "model": "data_management.transferissue",
+    "pk": 1,
+    "fields": {
+      "src_site": "ARNES",
+      "dst_site": "FZK-LCG2",
+      "issue_ptr_id": "1"
+    }
+  },
+  {
+    "model": "data_management.transferissue",
+    "pk": 2,
+    "fields": {
+      "src_site": "GR-05-DEMOKRITOS",
+      "dst_site": "DESY-HH",
+      "issue_ptr_id": "2"
+    }
+  },
+  {
     "model": "data_management.transferissue",
     "pk": 3,
     "fields": {
       "src_site": "Crane",
       "dst_site": "BEIJING-LCG2",
-      "category": "4",
-      "solution": "4",
-      "action": "4",
-      "amount": "3",
-      "status": "Resolved",
-      "last_modified": "2019-08-01T12:00:00+00:00"
+      "issue_ptr_id": "3"
     }
   },
   {
@@ -239,12 +280,7 @@
     "fields": {
       "src_site": "CA-WATERLOO-T2",
       "dst_site": "BU_ATLAS_Tier2",
-      "category": "7",
-      "solution": "7",
-      "action": "3",
-      "amount": "1",
-      "status": "New",
-      "last_modified": "2019-08-01T12:00:00+00:00"
+      "issue_ptr_id": "4"
     }
   }
 ]
