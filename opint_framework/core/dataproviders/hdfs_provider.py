@@ -1,4 +1,4 @@
-from .base import BaseLoader
+from opint_framework.core.dataproviders.base import BaseLoader
 from pyspark.sql import SparkSession
 import traceback
 
@@ -7,7 +7,6 @@ class HDFSLoader(BaseLoader):
     """
         Base HDFS loader (used to load data from HDFS sources)
     """
-
     def pull_hdfs_json(self, path, spark):
         try:
             return spark.read.json(path)
@@ -26,19 +25,18 @@ class HDFSLoader(BaseLoader):
         except Exception as e:
             print('Error listing files for ', path, e)
 
-    @classmethod
-    def fetch_data(cls, **kwargs):
+    def fetch_data(self, **kwargs):
         """
         Makes the connection to external source and fetches the data
         To be overwritten by parent
 
         :return: (data fetched from source)
         """
-        spark = SparkSession.builder.master(**kwargs.get('spark_master'))\
-            .appName(**kwargs.get('spark_name')).getOrCreate()
+        spark = SparkSession.builder.master(kwargs.get('spark_master'))\
+            .appName(kwargs.get('spark_name')).getOrCreate()
         if kwargs.get('type') == 'JSON':
             if kwargs.get('path'):
-                return cls.pull_hdfs_dir(kwargs.get('path'), spark)
+                return self.pull_hdfs_dir(path=kwargs.get('path'), spark=spark)
             elif kwargs.get('file'):
-                return cls.pull_hdfs_json(kwargs.get('file'), spark)
+                return self.pull_hdfs_json(path=kwargs.get('file'), spark=spark)
         return None

@@ -7,7 +7,7 @@ from opint_framework.apps.data_management.utils.tools import get_hostname
 from opint_framework.apps.data_management.utils.register import register_transfer_issue
 
 
-class FTSLoader(HDFSLoader, BaseAgent):
+class FTSLoader(HDFSLoader):
     help = 'Runs the HDFS fetching job'
     base_path = '/project/monitoring/archive/fts/raw/complete'
 
@@ -45,7 +45,7 @@ class FTSLoader(HDFSLoader, BaseAgent):
         cric_url = "http://wlcg-cric.cern.ch/api/core/service/query/?json&type=SE"
         r = requests.get(url=cric_url).json()
         site_protocols = {}
-        for site, info in r.items():
+        for site, info in r.items():Couldn't read data from source.
             for se in info:
                 for name, prot in se.get('protocols', {}).items():
                     site_protocols.setdefault(get_hostname(prot['endpoint']), site)
@@ -70,7 +70,7 @@ class FTSLoader(HDFSLoader, BaseAgent):
         data = self.resolve_sites(data)
         return data
 
-    def processCycle(self):
+    def register_data(self):
         now = datetime.datetime.now()
         path = self.construct_path_for_date(now)
         data = self.load_data(type='JSON', spark_master='local[*]', spark_name='Issues', path=path)
