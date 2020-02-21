@@ -1,5 +1,5 @@
 from django.db import models
-from opint_framework.core.models import Action, Issue
+from opint_framework.core.models import Issue
 
 
 class TransferIssue(Issue):
@@ -10,4 +10,4 @@ class TransferIssue(Issue):
     dst_site = models.CharField(max_length=128, blank=True)
 
     class Meta:
-        unique_together = (('message', 'type', 'src_site', 'dst_site'), )
+        unique_together = (('src_site', 'dst_site'), )

@@ -79,8 +79,20 @@ class Issue(models.Model):
 
     last_modified = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        abstract = True
-
     def __str__(self):
         return str(self.id)
+
+    class Meta:
+        unique_together = (('message', 'type'), )
+
+
+class IssueMetadata(models.Model):
+    """
+    Key-value pairs for Issue metadata
+    """
+    issue = models.ForeignKey(Issue, on_delete=models.PROTECT)
+    key = models.CharField(max_length=512)
+    value = models.CharField(max_length=512)
+
+    class Meta:
+        unique_together = (('issue', 'key', 'value'),)
