@@ -17,23 +17,19 @@ ENABLE_SCHEDULER = False
 API_PREFIX = "jobsbuster/api"
 
 
-# Atlas settings
-DB_HOST = 'localhost'
-DB_PORT = '10011'
-DB_SERV_NAME = 'adcr.cern.ch'
-
-# To be imported from additional settings
-DB_PASS = ''
-DB_USER = ''
-
 datafilespath = "/tmp"
 
+exec(open(str(Path.home())+"/private/db_settings.py").read())
+
 DATABASES = {
+    'default': {},
     'jobs_buster_jobs': {
-        'NAME': 'user_data',
         'ENGINE': 'django.db.backends.oracle',
-        'USER': 'user',
-        'PASSWORD': 'superS3cret'
+        'HOST': 'localhost',
+        'PORT': '10011',
+        'NAME': 'adcr.cern.ch',
+        'USER': DB_JOBS_USER, # Defined in private settings
+        'PASSWORD': DB_JOBS_PASS # Defined in private settings
     },
     'jobs_buster_persistency': {
         'NAME': 'customer_data',
@@ -43,4 +39,3 @@ DATABASES = {
     }
 }
 
-exec(open(str(Path.home())+"/private/db_settings.py").read())

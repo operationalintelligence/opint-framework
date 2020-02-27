@@ -12,6 +12,7 @@ class Connection(cx_Oracle.Connection):
 
 def retreiveData(datefrom, dateto):
     os.chdir('/opt/oracle')
+    dbsettings = settings.DATABASES['jobs_buster_jobs']
 
     query = """
         SELECT /*+ INDEX_RS_ASC(ja JOBS_JEDITASKID_PANDAID_IDX) */ ja.STARTTIME, ja.ENDTIME, ja.ATLASRELEASE, ja.ATTEMPTNR, ja.AVGPSS, 
@@ -38,8 +39,8 @@ def retreiveData(datefrom, dateto):
         on ja.pandaid  = hh.pandaid 
     """.format(datefrom, dateto)
 
-    dsn_tns = cx_Oracle.makedsn(settings.DB_HOST, settings.DB_PORT, service_name=settings.DB_SERV_NAME)
-    with Connection(dsn=dsn_tns, user=settings.DB_USER, password=settings.DB_PASS, threaded=True) as db:
+    dsn_tns = cx_Oracle.makedsn(dbsettings['HOST'], dbsettings['PORT'], service_name=dbsettings['NAME'])
+    with Connection(dsn=dsn_tns, user=dbsettings['USER'], password=dbsettings['PASSWORD'], threaded=True) as db:
         frame = pd.read_sql(query, db)
     return frame
 
