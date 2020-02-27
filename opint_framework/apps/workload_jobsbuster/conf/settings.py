@@ -26,6 +26,21 @@ DB_SERV_NAME = 'adcr.cern.ch'
 DB_PASS = ''
 DB_USER = ''
 
-exec(open(str(Path.home())+"/private/db_settings.py").read())
 datafilespath = "/tmp"
 
+DATABASES = {
+    'jobs_buster_jobs': {
+        'NAME': 'user_data',
+        'ENGINE': 'django.db.backends.oracle',
+        'USER': 'user',
+        'PASSWORD': 'superS3cret'
+    },
+    'jobs_buster_persistency': {
+        'NAME': 'customer_data',
+        'ENGINE': 'django.db.backends.oracle',
+        'USER': 'cust',
+        'PASSWORD': 'veryPriv@ate'
+    }
+}
+
+exec(open(str(Path.home())+"/private/db_settings.py").read())

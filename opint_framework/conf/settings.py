@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-from opint_framework.core.utils.common import scanActiveApps
+from opint_framework.core.utils.common import getActiveAppSetting, getDataBasesForActiveApps
 
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -30,35 +30,11 @@ SECRET_KEY = 'i-cj+m#t+!rv6x4t1(2r^zt@@p4&x7pv)=of0xh-a6w&vs-e(1'
 DEBUG = True
 MODE = os.environ.get('MODE')
 
-if MODE == "dev":
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': 'rucio_opint',
-        }
-    }
-elif MODE == "prod":
-    DATABASES = {
-        'default': {
-                'ENGINE': 'django.db.backends.mysql',
-                'NAME': os.environ.get('DB_NAME'),
-                'USER': 'admin',
-                'PASSWORD': os.environ.get('DB_PASS'),
-                'USER_CREATE': 'cric',
-                'PASSWORD_CREATE': os.environ.get('DB_PASS'),
-                'HOST': 'dbod-rucio-opint.cern.ch',
-                'PORT': '5501',
-                'OPTIONS': {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"}
-        }
-    }
-
-
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -83,9 +59,15 @@ INSTALLED_APPS = [
     'opint_framework.core.api',
 ]
 
-activeApps = scanActiveApps()
-for app in activeApps:
+
+activeApps = getActiveAppSetting(['INSTALLED_APPS'])
+for app, setting in activeApps.items():
     INSTALLED_APPS.append('opint_framework.apps.' + app)
+    if setting['INSTALLED_APPS']:
+        INSTALLED_APPS.extend(setting['INSTALLED_APPS'])
+
+
+DATABASES = getDataBasesForActiveApps()
 
 SITE_ID = 1
 REST_USE_JWT = True
