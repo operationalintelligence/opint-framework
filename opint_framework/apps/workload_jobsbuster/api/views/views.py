@@ -2,6 +2,8 @@ from rest_framework import viewsets
 import sys, traceback
 from rest_framework.response import Response
 import opint_framework.apps.workload_jobsbuster.api.pandaDataImporter as dataImporter
+from opint_framework.apps.workload_jobsbuster.models import WorkflowIssue
+
 import pickle
 import opint_framework.apps.workload_jobsbuster.conf.settings as settings
 import pandas as pd
@@ -11,6 +13,9 @@ from catboost import CatBoostRegressor, Pool, EFstrType
 import tempfile
 from rest_framework.decorators import api_view
 import json
+from datetime import datetime
+import os
+
 counter = 0
 
 """
@@ -19,6 +24,8 @@ API endpoint that allows SampleModel to be viewed or edited.
 @api_view(['GET'])
 def processTimeWindowData(request):
     global counter
+    os.chdir('/opt/oracle')
+
     timewindow = request.query_params['timewindow']
     timewindow = json.loads(timewindow)
     datefrom = timewindow['startdate']
@@ -31,10 +38,13 @@ def processTimeWindowData(request):
 
     listOfProblems = []
     classifyIssue(preprocessedFrame, listOfProblems, None)
-
     listOfProblems = sorted(listOfProblems, key=lambda i: i.lostWallTime, reverse=True)
 
     for item in listOfProblems:
+        # issue = WorkflowIssue(observation_started=datetime.now(), observation_finished=datetime.now(),
+        #                       walltime_loss=100, failures_counts=100)
+        # issue.save(using='jobs_buster_persistency')
+
         # print(item.features)
         # print(item.lostWallTime / 3600.0 / 24.0 / 365.0)
         # print('\n')

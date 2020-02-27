@@ -96,3 +96,4 @@ class IssueMetadata(models.Model):
 
     class Meta:
         unique_together = (('issue', 'key', 'value'),)
+        abstract = True

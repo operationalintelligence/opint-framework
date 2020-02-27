@@ -32,10 +32,9 @@ DATABASES = {
         'PASSWORD': DB_JOBS_PASS # Defined in private settings
     },
     'jobs_buster_persistency': {
-        'NAME': 'customer_data',
         'ENGINE': 'django.db.backends.oracle',
-        'USER': 'cust',
-        'PASSWORD': 'veryPriv@ate'
+        'NAME': 'localhost:10015/int8r.cern.ch',
+        'USER': DB_PERS_USER,
+        'PASSWORD': DB_PERS_PASS
     }
 }
-
