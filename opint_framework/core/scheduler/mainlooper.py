@@ -44,7 +44,6 @@ def main():
 
     if DO_DEBUG_AGENTS:
         schedule.run_all()
-        print("Processing finished")
         time.sleep(1000) # Timeout needed to finish agents cycle
         return 0
     else:

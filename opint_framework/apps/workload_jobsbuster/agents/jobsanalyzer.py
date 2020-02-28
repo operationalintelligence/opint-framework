@@ -17,12 +17,12 @@ import opint_framework.apps.workload_jobsbuster.api.pandaDataImporter as dataImp
 
 class JobsAnalyserAgent(BaseAgent):
     lock = threading.RLock()
-
+    counter = 0
     def init(self):
         pass
 
     def processCycle(self):
-        global counter
+        self.counter = 0
         os.chdir('/opt/oracle')
 
         print("JobsAnalyserAgent started")
@@ -30,6 +30,7 @@ class JobsAnalyserAgent(BaseAgent):
         if lastSession:
             timeGap = datetime.datetime.now(datetime.timezone.utc) - lastSession.timewindow_end
             if timeGap < datetime.timedelta(minutes=30):
+                print("JobsAnalyserAgent finished")
                 return 0
             datefrom = lastSession.timewindow_end
 
@@ -45,7 +46,6 @@ class JobsAnalyserAgent(BaseAgent):
 
         dbsession = AnalysisSessions.objects.using('jobs_buster_persistency').create(timewindow_start=datefrom,
                                                                                      timewindow_end=dateto)
-
         pandasdf = dataImporter.retreiveData(datefrom, dateto)
         # pickle.dump(pandasdf, open(settings.datafilespath + "rawdataframe0_daily1.sr", 'wb+'))
         # pandasdf = pickle.load(open(settings.datafilespath + "rawdataframe0_daily1.sr", 'rb'))
@@ -77,6 +77,7 @@ class JobsAnalyserAgent(BaseAgent):
                                                                                                  value=featureValue)
         dbsession.analysis_finished = datetime.datetime.utcnow()
         dbsession.using('jobs_buster_persistency').save()
+        print("JobsAnalyserAgent finished")
 
 
     def preprocessRawData(self, frame):
@@ -249,8 +250,6 @@ class JobsAnalyserAgent(BaseAgent):
 
     def classifyIssue(self, frame_loc, listOfProblems=None, parentIssue=None, deepnesslog=0):
 
-        global counter
-
         if parentIssue is not None:
             focusedDFrame = parentIssue.filterByIssue(frame_loc).copy()
         else:
@@ -272,7 +271,7 @@ class JobsAnalyserAgent(BaseAgent):
             # print("\nAdding issue #", counter, " deepness:", deepnesslog)
             # print("Parent features:", parentIssue.features)
             # print("nSuccessJobs:", parentIssue.nSuccessJobs, " nFailedJobs:", parentIssue.nFailedJobs)
-            counter += 1
+            self.counter += 1
             return None
 
         if (parentIssue is not None) and (nestedIssue is not None):
@@ -288,7 +287,7 @@ class JobsAnalyserAgent(BaseAgent):
                 # print("Parent features:", parentIssue.features)
                 # print("Nested features:", nestedIssue.features)
                 # print("nSuccessJobs:", nestedIssue.nSuccessJobs, " nFailedJobs:", nestedIssue.nFailedJobs)
-                counter += 1
+                self.counter += 1
 
 
         elif (nestedIssue is not None):

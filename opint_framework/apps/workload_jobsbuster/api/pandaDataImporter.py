@@ -11,8 +11,8 @@ class Connection(cx_Oracle.Connection):
         return cursor
 
 def retreiveData(datefrom, dateto):
-    datefrom = datefrom.astimezone(pytz.utc)
-    dateto = dateto.astimezone(pytz.utc)
+    datefrom = datefrom.astimezone(pytz.utc).replace(tzinfo=None).replace(microsecond=0)
+    dateto = dateto.astimezone(pytz.utc).replace(tzinfo=None).replace(microsecond=0)
     os.chdir('/opt/oracle')
     dbsettings = settings.DATABASES['jobs_buster_jobs']
 
