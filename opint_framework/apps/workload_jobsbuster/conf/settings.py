@@ -8,16 +8,16 @@ IS_ACTIVATED = True
 #
 
 POLLING_TIME = {
-    "jobscollector": 1,
+    "jobsanalyzer": 10,
 }
 
 #The deployment setting which activate/deactivate all agents executing in the app
-ENABLE_SCHEDULER = False
+ENABLE_SCHEDULER = True
 
 API_PREFIX = "jobsbuster/api"
 
 
-datafilespath = "/tmp"
+datafilespath = "/tmp/"
 
 exec(open(str(Path.home())+"/private/db_settings.py").read())
 

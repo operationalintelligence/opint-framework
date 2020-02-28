@@ -130,7 +130,7 @@ LANGUAGE_CODE = 'en-us'
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
-TIME_ZONE = 'Europe/Zurich'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
@@ -179,3 +179,6 @@ SCHEDULER_SCAN_PATH = "apps"
 # Path to print logs. None means console output
 #LOG_PATH = None
 LOG_PATH = "./scheduler.log"
+
+#This settings allow to run agents once, useful for debugging
+DO_DEBUG_AGENTS = True

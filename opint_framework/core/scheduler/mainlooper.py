@@ -7,6 +7,10 @@ from importlib import util as importutil
 
 from django.conf import settings
 from opint_framework.core.utils.common import getAgentsShedule
+from opint_framework.core.prototypes.BaseAgent import BaseAgent
+from opint_framework.conf.settings import DO_DEBUG_AGENTS, DATABASES
+import django
+django.setup()
 
 # This is the main framework scheduler which controls main flow
 
@@ -25,20 +29,28 @@ def run_threaded(job_func):
 
 def main():
     modulesToSchedule = getAgentsShedule()
-    logging.debug("The following agents found: {}".format(modulesToSchedule))
+    logging.debug("The following classes found: {}".format(modulesToSchedule))
 
     for agentname, polltime in modulesToSchedule.items():
         modulespec = importutil.find_spec(agentname)
         app_conf = importutil.module_from_spec(modulespec)
         modulespec.loader.exec_module(app_conf)
         clsmembers = inspect.getmembers(app_conf, inspect.isclass)
-        logging.debug("We scheduling the following agent class: {}".format(clsmembers[-1][0]))
-        agent = clsmembers[-1][1]()
-        schedule.every(polltime).seconds.do(run_threaded, agent.execute)
+        for clsmember in clsmembers:
+            if issubclass(clsmember[1], BaseAgent) and clsmember[0] != 'BaseAgent':
+                logging.debug("We scheduling the following agent class: {}".format(clsmember[0]))
+                agent = clsmember[1]()
+                schedule.every(polltime).seconds.do(run_threaded, agent.execute)
 
-    while 1:
-        schedule.run_pending()
-        time.sleep(1)
+    if DO_DEBUG_AGENTS:
+        schedule.run_all()
+        print("Processing finished")
+        time.sleep(1000) # Timeout needed to finish agents cycle
+        return 0
+    else:
+        while 1:
+            schedule.run_pending()
+            time.sleep(1)
 
 
 if __name__ == "__main__":

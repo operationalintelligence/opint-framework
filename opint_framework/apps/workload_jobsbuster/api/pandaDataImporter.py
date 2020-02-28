@@ -2,7 +2,7 @@ import cx_Oracle
 import pandas as pd
 import opint_framework.apps.workload_jobsbuster.conf.settings as settings
 import os
-
+import pytz
 class Connection(cx_Oracle.Connection):
     def cursor(self):
         cursor = super(Connection, self).cursor()
@@ -11,6 +11,8 @@ class Connection(cx_Oracle.Connection):
         return cursor
 
 def retreiveData(datefrom, dateto):
+    datefrom = datefrom.astimezone(pytz.utc)
+    dateto = dateto.astimezone(pytz.utc)
     os.chdir('/opt/oracle')
     dbsettings = settings.DATABASES['jobs_buster_jobs']
 
