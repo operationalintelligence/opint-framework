@@ -1,6 +1,6 @@
 from opint_framework.core.prototypes.BaseAgent import BaseAgent
 import threading
-from opint_framework.apps.workload_jobsbuster.models import WorkflowIssue, WorkflowIssueMetadata, AnalysisSessions
+from opint_framework.apps.workload_jobsbuster.models import WorkflowIssue, WorkflowIssueMetadata, AnalysisSessions, WorkflowIssueTicks
 import pickle
 import opint_framework.apps.workload_jobsbuster.conf.settings as settings
 import pandas as pd
@@ -14,6 +14,7 @@ import datetime
 import os
 from django.utils import timezone
 import opint_framework.apps.workload_jobsbuster.api.pandaDataImporter as dataImporter
+import traceback, sys
 
 class JobsAnalyserAgent(BaseAgent):
     lock = threading.RLock()
@@ -47,15 +48,19 @@ class JobsAnalyserAgent(BaseAgent):
         dbsession = AnalysisSessions.objects.using('jobs_buster_persistency').create(timewindow_start=datefrom,
                                                                                      timewindow_end=dateto)
         pandasdf = dataImporter.retreiveData(datefrom, dateto)
-        # pickle.dump(pandasdf, open(settings.datafilespath + "rawdataframe0_daily1.sr", 'wb+'))
-        # pandasdf = pickle.load(open(settings.datafilespath + "rawdataframe0_daily1.sr", 'rb'))
+
+        #pickle.dump(pandasdf, open(settings.datafilespath + "rawdataframe0_daily1.sr", 'wb+'))
+        #pandasdf = pickle.load(open(settings.datafilespath + "rawdataframe0_daily1.sr", 'rb'))
+
         preprocessedFrame = self.preprocessRawData(pandasdf)
 
         listOfProblems = []
         self.classifyIssue(preprocessedFrame, listOfProblems, None)
+        listOfProblems = self.removeDublicates(listOfProblems)
         listOfProblems = sorted(listOfProblems, key=lambda i: i.lostWallTime, reverse=True)
-        # pickle.dump(listOfProblems, open(settings.datafilespath + "rawdataframe0_daily2.sr", 'wb+'))
-        # listOfProblems = pickle.load(open(settings.datafilespath + "rawdataframe0_daily2.sr", 'rb'))
+
+        #pickle.dump(listOfProblems, open(settings.datafilespath + "rawdataframe0_daily2.sr", 'wb+'))
+        #listOfProblems = pickle.load(open(settings.datafilespath + "rawdataframe0_daily2.sr", 'rb'))
 
         for spottedProblem in listOfProblems:
             issue = WorkflowIssue.objects.using('jobs_buster_persistency').create(session_id_fk=dbsession,
@@ -75,10 +80,32 @@ class JobsAnalyserAgent(BaseAgent):
                 metadata = WorkflowIssueMetadata.objects.using('jobs_buster_persistency').create(issue_id_fk=issue,
                                                                                                  key=featureName,
                                                                                                  value=featureValue)
+            ticks = self.historgramFailures(spottedProblem.filterByIssue(preprocessedFrame), spottedProblem)
+            self.saveFailureTicks(ticks, issue)
+
         dbsession.analysis_finished = datetime.datetime.utcnow()
-        dbsession.using('jobs_buster_persistency').save()
+        dbsession.save(using='jobs_buster_persistency')
         print("JobsAnalyserAgent finished")
 
+    def saveFailureTicks(self,ticks,issue):
+        ticksEntries = [WorkflowIssueTicks(issue_id_fk=issue, tick_time=t, walltime_loss=w, nFailed_jobs=nf) for t,w,nf in ticks]
+        WorkflowIssueTicks.objects.using('jobs_buster_persistency').bulk_create(ticksEntries)
+
+    def historgramFailures(self, dataFrame, spottedProblem):
+        grp = dataFrame.loc[(dataFrame['ISFAILED'] == 1) & (dataFrame['ENDTIME'] > spottedProblem.timeWindow['start'])
+                            & (dataFrame['ENDTIME'] < spottedProblem.timeWindow['end'])][['ENDTIME', 'LOSTWALLTIME', 'ISFAILED']]\
+            .groupby([pd.Grouper(freq="15Min", key='ENDTIME')]).agg({
+            'LOSTWALLTIME': sum,
+            'ISFAILED': 'count',
+        })
+        wallList = grp['LOSTWALLTIME'].values.tolist()
+        NfailList = grp['ISFAILED'].values.tolist()
+        index = grp.index.to_pydatetime().tolist()
+        return zip(index, wallList, NfailList)
+
+
+    def removeDublicates(self, listOfProblems):
+        return set(listOfProblems)
 
     def preprocessRawData(self, frame):
         frame['ENDTIME'] = frame['ENDTIME'].astype('datetime64')
@@ -145,8 +172,11 @@ class JobsAnalyserAgent(BaseAgent):
         del newframe_r_X['ISFAILED']
 
         categorical_features_indices = list(np.where((newframe_r_X.dtypes == np.object))[0])
-        newframe_r_Y = frame_loc[['LOSTWALLTIME']].copy()
-        newframe_r_Y['LOSTWALLTIME'] = newframe_r_Y['LOSTWALLTIME'].apply(lambda x: x if x == 0 else np.log(x))
+        #newframe_r_Y = frame_loc[['LOSTWALLTIME']].copy()
+        #newframe_r_Y['LOSTWALLTIME'] = newframe_r_Y['LOSTWALLTIME'].apply(lambda x: x if x == 0 else np.log(x))
+
+        newframe_r_Y = frame_loc[['ISFAILED']].copy()
+
         X_train, X_validation, y_train, y_validation = train_test_split(newframe_r_X, newframe_r_Y, train_size=0.85,
                                                                         random_state=42)
         train_pool = Pool(X_train, label=y_train, cat_features=categorical_features_indices)
@@ -261,9 +291,9 @@ class JobsAnalyserAgent(BaseAgent):
             try:
                 nestedIssue = self.scrubStatistics(focusedDFrame)
             except:
-                # print("-" * 60)
-                # traceback.print_exc(file=sys.stdout)
-                # print("-" * 60)
+                print("-" * 60)
+                traceback.print_exc(file=sys.stdout)
+                print("-" * 60)
                 pass
 
         elif parentIssue is not None:
@@ -277,8 +307,7 @@ class JobsAnalyserAgent(BaseAgent):
         if (parentIssue is not None) and (nestedIssue is not None):
             nestedIssue.appendFeatures(parentIssue)
 
-            if (
-                    nestedIssue.purity > parentIssue.purity and parentIssue.nSuccessJobs > 0 and parentIssue.nFailedJobs > 0) or not self.checkDFEligible(
+            if (nestedIssue.purity > parentIssue.purity and parentIssue.nSuccessJobs > 0 and parentIssue.nFailedJobs > 0) or not self.checkDFEligible(
                     frame_loc):
                 self.classifyIssue(frame_loc, listOfProblems, nestedIssue, deepnesslog + 1)
             else:

@@ -31,3 +31,11 @@ class WorkflowIssueMetadata(models.Model):
         db_table = 'ATLAS_JOBS_BUSTER_ISSUE_META'
 
 
+class WorkflowIssueTicks(models.Model):
+    tick_id = models.AutoField(primary_key=True, db_column='TICK_ID')
+    issue_id_fk = models.ForeignKey(WorkflowIssue, on_delete=models.CASCADE, db_column='ISSUE_ID_FK')
+    tick_time = models.DateTimeField(db_column='TICK_TIME')
+    walltime_loss = models.IntegerField(null=True, db_column='WALLTIME_LOSS')
+    nFailed_jobs = models.IntegerField(null=True, db_column='NFAILED_JOBS')
+    class Meta:
+        db_table = 'ATLAS_JOBS_BUSTER_ISSUE_TICKS'
