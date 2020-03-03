@@ -10,6 +10,8 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
+import matplotlib.pyplot as plt
+import numpy as np
 
 counter = 0
 
@@ -50,21 +52,14 @@ def getIssuesWithMets(query, topN):
 def addColorsAndNames(issues):
     if len(issues) == 0:
         return issues
-    normWall = mpl.colors.Normalize(vmin=issues[-1]['sumWLoss'], vmax=issues[0]['sumWLoss'])
-    cmapW = cm.hot
-    mW = cm.ScalarMappable(norm=normWall, cmap=cmapW)
+    cmap = plt.get_cmap('hsv')
+    colors = cmap(np.linspace(0, 1, len(issues)))
 
-    for issue in issues:
-        rgba = mW.to_rgba(issue['sumWLoss'])
-        issue['rgbaW'] = rgba
-
-    normN = mpl.colors.Normalize(vmin=issues[-1]['sumJFails'], vmax=issues[0]['sumJFails'])
-    cmapN = cm.hot
-    mN = cm.ScalarMappable(norm=normN, cmap=cmapN)
+    for (issue,color) in zip(issues, colors):
+        issue['rgbaW'] = list(color)
 
     for index, issue in enumerate(issues):
-        rgba = mN.to_rgba(issue['sumJFails'])
-        issue['rgbaNF'] = rgba
+        issue['rgbaNF'] = list(colors[index])
         issue['name'] = 'N_'+ str(index)
     return issues
 
