@@ -29,31 +29,36 @@ def processTimeWindowData(request):
     else:
         dateto = datetime.datetime.utcnow()
         datefrom = datetime.datetime.utcnow() - datetime.timedelta(hours=12)
-    topN = int(request.query_params['topn']) if 'topn' in request.query_params else 10
+    topN = int(request.query_params['topn']) if 'topn' in request.query_params else 20
+    metric = (request.query_params['metric']) if 'metric' in request.query_params else 'loss'
+    if metric == 'loss':
+        metric = 'sumWLoss'
+    elif metric == 'fails':
+        metric = 'sumJFails'
 
     #datefrom = parse('28-FEB-20 23:00:00')
     #dateto = parse('05-MAR-20 00:00:00')
     query = Q(~Q(issue_id_fk__observation_started__gt=dateto) & ~Q(issue_id_fk__observation_finished__lt=datefrom))
-    ret = getIssuesWithMets(query, topN=topN)
+    ret = getIssuesWithMets(query, topN=topN, metric = metric)
     ret = addColorsAndNames(ret)
     ticks, mesuresW, mesuresNF, colorsNF, colorsW = getHistogramData(ret, query)
     return JsonResponse({"Result":"OK", "issues": ret, "ticks":ticks, "mesuresW":mesuresW, "mesuresNF":mesuresNF,
                      "colorsNF":colorsNF, "colorsW":colorsW})
 
 
-def getIssuesWithMets(query, topN):
+def getIssuesWithMets(query, topN, metric):
     issues = WorkflowIssueMetadata.objects.using('jobs_buster_persistency').select_related('issue_id_fk').filter(query)
     issuesMapper = IssuesMapper()
     for issue in issues:
         issuesMapper.addMetaData(issue)
-    return issuesMapper.getTopNIsses(topN=topN, metric='sumJFails')
+    return issuesMapper.getTopNIsses(topN=topN, metric=metric)
 
 
 def addColorsAndNames(issues):
     if len(issues) == 0:
         return issues
-    cmap = plt.get_cmap('hsv')
-    colors = cmap(np.linspace(0, 1, len(issues)))
+    cmap = plt.get_cmap('tab20c')
+    colors = cmap(np.linspace(0, 1, len(issues)+1))
 
     for (issue,color) in zip(issues, colors):
         issue['rgbaW'] = list(color)

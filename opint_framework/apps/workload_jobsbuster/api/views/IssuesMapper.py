@@ -27,6 +27,8 @@ class IssuesMapper:
             sumWLoss = 0
             sumJFails = 0
             sumJSucc = 0
+            observation_started = None
+            observation_finished = None
             for issue in issuesIDs:
                 record = {
                     "observation_started": self.rawcollection[issue]['observation_started'],
@@ -38,6 +40,11 @@ class IssuesMapper:
                 sumWLoss += self.rawcollection[issue]['walltime_loss']
                 sumJFails += self.rawcollection[issue]['nFailed_jobs']
                 sumJSucc += self.rawcollection[issue]['nSuccess_jobs']
+                if not observation_started or observation_started > self.rawcollection[issue]['observation_started']:
+                    observation_started =  self.rawcollection[issue]['observation_started']
+                if not observation_finished or observation_finished < self.rawcollection[issue]['observation_finished']:
+                    observation_finished =  self.rawcollection[issue]['observation_finished']
+
                 evidences.append(record)
             self.joinedissues.append({
                 "features": features,
@@ -45,6 +52,8 @@ class IssuesMapper:
                 "sumWLoss": sumWLoss,
                 "sumJFails": sumJFails,
                 "sumJSucc": sumJSucc,
+                "observation_finished": observation_finished,
+                "observation_started": observation_started,
                 "id": issuesIDs[0],
             })
 
