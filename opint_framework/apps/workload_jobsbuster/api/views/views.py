@@ -8,12 +8,15 @@ from django.db.models import Q
 from opint_framework.apps.workload_jobsbuster.api.views.IssuesMapper import IssuesMapper
 import matplotlib as mpl
 import matplotlib.cm as cm
+from django.http import JsonResponse
+from django.views.decorators.cache import never_cache
 
 counter = 0
 
 """
 API endpoint that allows SampleModel to be viewed or edited.
 """
+@never_cache
 @api_view(['GET', 'POST'])
 def processTimeWindowData(request):
     if 'timewindow' in request.query_params:
@@ -32,7 +35,7 @@ def processTimeWindowData(request):
     ret = getIssuesWithMets(query, topN=topN)
     ret = addColorsAndNames(ret)
     ticks, mesuresW, mesuresNF, colorsNF, colorsW = getHistogramData(ret, query)
-    return Response({"Result":"OK", "issues": ret, "ticks":ticks, "mesuresW":mesuresW, "mesuresNF":mesuresNF,
+    return JsonResponse({"Result":"OK", "issues": ret, "ticks":ticks, "mesuresW":mesuresW, "mesuresNF":mesuresNF,
                      "colorsNF":colorsNF, "colorsW":colorsW})
 
 
@@ -41,7 +44,6 @@ def getIssuesWithMets(query, topN):
     issuesMapper = IssuesMapper()
     for issue in issues:
         issuesMapper.addMetaData(issue)
-    issuesMapper.joinSimilarIssues()
     return issuesMapper.getTopNIsses(topN=topN, metric='sumJFails')
 
 

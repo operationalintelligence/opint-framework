@@ -1,6 +1,8 @@
 class IssuesMapper:
-    rawcollection = {}
-    joinedissues = []
+
+    def __init__(self):
+        self.rawcollection = {}
+        self.joinedissues = []
 
     def addMetaData(self, metaDataObj):
         issue = metaDataObj.issue_id_fk
