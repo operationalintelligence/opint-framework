@@ -29,7 +29,7 @@ class JobsAnalyserAgent(BaseAgent):
         print("JobsAnalyserAgent started")
         lastSession = AnalysisSessions.objects.using('jobs_buster_persistency').order_by('-timewindow_end').first()
         if lastSession:
-            timeGap = datetime.datetime.now(datetime.timezone.utc) - lastSession.timewindow_end
+            timeGap = datetime.datetime.now(datetime.timezone.utc) - lastSession.timewindow_end.astimezone(timezone.utc)
             if timeGap < datetime.timedelta(minutes=30):
                 print("JobsAnalyserAgent finished")
                 return 0
@@ -83,7 +83,7 @@ class JobsAnalyserAgent(BaseAgent):
             ticks = self.historgramFailures(spottedProblem.filterByIssue(preprocessedFrame), spottedProblem)
             self.saveFailureTicks(ticks, issue)
 
-        dbsession.analysis_finished = datetime.datetime.utcnow()
+        dbsession.analysis_finished = datetime.datetime.now(datetime.timezone.utc)
         dbsession.save(using='jobs_buster_persistency')
         print("JobsAnalyserAgent finished")
 

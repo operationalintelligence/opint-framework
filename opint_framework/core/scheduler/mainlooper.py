@@ -44,7 +44,9 @@ def main():
 
     if DO_DEBUG_AGENTS:
         schedule.run_all()
-        time.sleep(1000) # Timeout needed to finish agents cycle
+        for t in threading.enumerate():
+            if t.daemon and not 'pydevd.' in  t.getName():
+                t.join()
         return 0
     else:
         while 1:

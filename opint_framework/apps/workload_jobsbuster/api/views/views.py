@@ -10,8 +10,6 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 counter = 0
-os.chdir('/opt/oracle')
-
 
 """
 API endpoint that allows SampleModel to be viewed or edited.
@@ -48,6 +46,8 @@ def getIssuesWithMets(query, topN):
 
 
 def addColorsAndNames(issues):
+    if len(issues) == 0:
+        return issues
     normWall = mpl.colors.Normalize(vmin=issues[-1]['sumWLoss'], vmax=issues[0]['sumWLoss'])
     cmapW = cm.hot
     mW = cm.ScalarMappable(norm=normWall, cmap=cmapW)
