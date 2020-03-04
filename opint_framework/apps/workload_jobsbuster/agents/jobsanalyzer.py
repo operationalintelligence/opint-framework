@@ -22,22 +22,21 @@ class JobsAnalyserAgent(BaseAgent):
 
         print("JobsAnalyserAgent started")
         lastSession = AnalysisSessions.objects.using('jobs_buster_persistency').order_by('-timewindow_end').first()
-        if lastSession:
-            timeGap = datetime.datetime.now(datetime.timezone.utc) - lastSession.timewindow_end.astimezone(timezone.utc)
-            if timeGap < datetime.timedelta(minutes=30):
-                print("JobsAnalyserAgent finished")
-                return 0
-            datefrom = lastSession.timewindow_end
+#         if lastSession:
+#             timeGap = datetime.datetime.now(datetime.timezone.utc) - lastSession.timewindow_end.astimezone(timezone.utc)
+#             if timeGap < datetime.timedelta(minutes=30):
+#                 print("JobsAnalyserAgent finished")
+#                 return 0
+# #            datefrom = lastSession.timewindow_end
+# #            minutes = 240
+#             datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=240)
+#             dateto = datetime.datetime.utcnow()
+#         else:
+#             datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=240)
+#             dateto = datetime.datetime.utcnow()
 
-            if timeGap > datetime.timedelta(minutes=60):
-                minutes = 60
-            else:
-                minutes = 30
-            dateto = lastSession.timewindow_end + datetime.timedelta(minutes=minutes)
-        else:
-            datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=240)
-            dateto = datetime.datetime.utcnow()
-
+        datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=360)
+        dateto = datetime.datetime.utcnow()
 
         dbsession = AnalysisSessions.objects.using('jobs_buster_persistency').create(timewindow_start=datefrom,
                                                                                      timewindow_end=dateto)
@@ -55,6 +54,8 @@ class JobsAnalyserAgent(BaseAgent):
 
         #pickle.dump(listOfProblems, open(settings.datafilespath + "rawdataframe0_daily2.sr", 'wb+'))
         #listOfProblems = pickle.load(open(settings.datafilespath + "rawdataframe0_daily2.sr", 'rb'))
+
+        self.removeIssuesNewerThan(datefrom)
 
         for spottedProblem in listOfProblems:
             issue = WorkflowIssue.objects.using('jobs_buster_persistency').create(session_id_fk=dbsession,
@@ -81,9 +82,15 @@ class JobsAnalyserAgent(BaseAgent):
         dbsession.save(using='jobs_buster_persistency')
         print("JobsAnalyserAgent finished")
 
+
+    def removeIssuesNewerThan(self, date):
+        WorkflowIssue.objects.using('jobs_buster_persistency').filter(observation_started__gt=date).delete()
+
+
     def saveFailureTicks(self,ticks,issue):
         ticksEntries = [WorkflowIssueTicks(issue_id_fk=issue, tick_time=t, walltime_loss=w, nFailed_jobs=nf) for t,w,nf in ticks]
         WorkflowIssueTicks.objects.using('jobs_buster_persistency').bulk_create(ticksEntries)
+
 
     def historgramFailures(self, dataFrame, spottedProblem):
         grp = dataFrame.loc[(dataFrame['ISFAILED'] == 1) & (dataFrame['ENDTIME'] > spottedProblem.timeWindow['start'])
