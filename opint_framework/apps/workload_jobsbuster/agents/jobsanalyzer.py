@@ -1,17 +1,12 @@
 from opint_framework.core.prototypes.BaseAgent import BaseAgent
 import threading
 from opint_framework.apps.workload_jobsbuster.models import WorkflowIssue, WorkflowIssueMetadata, AnalysisSessions, WorkflowIssueTicks
-import pickle
-import opint_framework.apps.workload_jobsbuster.conf.settings as settings
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from catboost import CatBoostRegressor, Pool, EFstrType
+from catboost import CatBoostRegressor, CatBoostClassifier, Pool, EFstrType
 import tempfile
-from rest_framework.decorators import api_view
-import json
 import datetime
-import os
 from django.utils import timezone
 import opint_framework.apps.workload_jobsbuster.api.pandaDataImporter as dataImporter
 import traceback, sys
@@ -24,7 +19,6 @@ class JobsAnalyserAgent(BaseAgent):
 
     def processCycle(self):
         self.counter = 0
-        os.chdir('/opt/oracle')
 
         print("JobsAnalyserAgent started")
         lastSession = AnalysisSessions.objects.using('jobs_buster_persistency').order_by('-timewindow_end').first()
@@ -120,8 +114,8 @@ class JobsAnalyserAgent(BaseAgent):
 
         # Cathegorial
         newframe['ATLASRELEASE'] = frame['ATLASRELEASE']
-        newframe['PILOTVERSION'] = frame['PILOTID'].apply(
-            lambda x: x.split('|')[-1] if x and '|' in x else 'Not specified').str.replace(" ", "%20")
+#        newframe['PILOTVERSION'] = frame['PILOTID'].apply(
+#            lambda x: x.split('|')[-1] if x and '|' in x else 'Not specified').str.replace(" ", "%20")
         newframe['CLOUD'] = frame['CLOUD']
         newframe['CMTCONFIG'] = frame['CMTCONFIG']
         newframe['COMPUTINGSITE'] = frame['COMPUTINGSITE']
@@ -183,15 +177,15 @@ class JobsAnalyserAgent(BaseAgent):
         validate_pool = Pool(X_validation, label=y_validation, cat_features=categorical_features_indices)
 
         with tempfile.TemporaryDirectory() as tmpdirname:
-            model = CatBoostRegressor(
+            model = CatBoostClassifier(
                 iterations=400,
                 random_seed=2,
                 logging_level='Silent',
                 depth=2,
-                learning_rate=0.001,
+                learning_rate=0.01,
                 task_type="CPU",
                 train_dir=tmpdirname,
-                used_ram_limit='4gb',
+                used_ram_limit='6gb',
             )
             model.fit(
                 train_pool, eval_set=validate_pool,
@@ -234,11 +228,9 @@ class JobsAnalyserAgent(BaseAgent):
         (feature_names, feature_importances, interactions, X_tr_col) = self.analyseProblem(frame_loc)
         feature_importances_sorted = sorted(zip(feature_importances, feature_names), reverse=True)
         featuresLists = []
-        for score, name in feature_importances_sorted:
-            #if score > 5:
-            #    print('{}: {}'.format(name, score))
-            if score > 15:
-                featuresLists.append(name)
+        score, name = feature_importances_sorted[0]
+        if score > 25:
+            featuresLists.append(name)
         if len(featuresLists) > 0:
             groups = frame_loc.groupby(featuresLists[0]).agg(
                 {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',

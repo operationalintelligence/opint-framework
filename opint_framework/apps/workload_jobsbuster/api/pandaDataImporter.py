@@ -1,7 +1,6 @@
 import cx_Oracle
 import pandas as pd
 import opint_framework.apps.workload_jobsbuster.conf.settings as settings
-import os
 import pytz
 class Connection(cx_Oracle.Connection):
     def cursor(self):
@@ -16,8 +15,8 @@ def retreiveData(datefrom, dateto):
     dbsettings = settings.DATABASES['jobs_buster_jobs']
 
     query = """
-        SELECT /*+ INDEX_RS_ASC(ja JOBS_JEDITASKID_PANDAID_IDX) */ ja.STARTTIME, ja.ENDTIME, ja.ATLASRELEASE, ja.ATTEMPTNR, ja.AVGPSS, 
-            ja.AVGRSS, ja.AVGSWAP, ja.AVGVMEM, ja.BROKERAGEERRORCODE, ja.CLOUD, ja.CMTCONFIG, hh.COMPUTINGELEMENT, ja.COMPUTINGSITE, 
+    SELECT /*+ INDEX_RS_ASC(ja JOBS_JEDITASKID_PANDAID_IDX) */ ja.STARTTIME, ja.ENDTIME, ja.ATLASRELEASE, ja.ATTEMPTNR, ja.AVGPSS,
+            ja.AVGRSS, ja.AVGSWAP, ja.AVGVMEM, ja.BROKERAGEERRORCODE, ja.CLOUD, ja.CMTCONFIG, ja.COMPUTINGELEMENT, ja.COMPUTINGSITE, 
             ja.ACTUALCORECOUNT, ja.CPUCONSUMPTIONTIME, ja.CPUCONSUMPTIONUNIT, ja.CREATIONHOST, ja.CREATIONTIME, 
             ja.CURRENTPRIORITY, ja.DDMERRORCODE, ja.DDMERRORDIAG, ja.DESTINATIONSE, ja.DESTINATIONSITE, ja.EVENTSERVICE, ja.PILOTID, 
             ja.PILOTTIMING, ja.PROCESSINGTYPE, ja.PRODUSERID, ja.PRODUSERNAME, ja.REQID, ja.RESOURCE_TYPE, ja.SCHEDULERID, 
@@ -26,18 +25,13 @@ def retreiveData(datefrom, dateto):
             ja.JOBDISPATCHERERRORDIAG, ja.JOBMETRICS, ja.JOBNAME, ja.JOBSTATUS, ja.NEVENTS, ja.NUCLEUS, 
             ja.PILOTERRORCODE, ja.PILOTERRORDIAG, ja.SUPERRORCODE, ja.SUPERRORDIAG, ja.TASKBUFFERERRORCODE, ja.TASKBUFFERERRORDIAG, 
             ja.TOTRBYTES, ja.TOTWBYTES, ja.TRANSEXITCODE, ja.TRANSFORMATION, ja.WORKINGGROUP, ja.NINPUTDATAFILES, ja.BATCHID
-        FROM ATLAS_PANDA.JOBSARCHIVED4 ja 
-        JOIN ATLAS_PANDA.jedi_tasks ta 
-        ON ta.jeditaskid=ja.jeditaskid  and ja.JOBSTATUS in ('failed','finished') and ta.tasktype='prod' and not ja.endtime is null and
+        FROM ATLAS_PANDA.JOBSARCHIVED4 ja
+        WHERE ja.JOBSTATUS in ('failed','finished') and ja.PRODSOURCELABEL='managed' and not ja.endtime is null and
             (
-                  (ja.endtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS') and  ja.endtime < TO_DATE('{1}', 'YYYY-MM-DD HH24:MI:SS')) 
+              (ja.endtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS'))
+            OR 
+              (ja.STARTTIME > TO_DATE('{1}', 'YYYY-MM-DD HH24:MI:SS'))
             )
-        LEFT JOIN (
-            SELECT hw.computingelement, hj.pandaid, hj.workerid, hj.harvesterid 
-            from ATLAS_PANDA.harvester_workers hw, ATLAS_PANDA.harvester_rel_jobs_workers hj
-            where hj.harvesterid = hw.harvesterid and hw.workerid = hj.workerid
-        ) hh   
-        on ja.pandaid  = hh.pandaid 
     """.format(datefrom, dateto)
 
     dsn_tns = cx_Oracle.makedsn(dbsettings['HOST'], dbsettings['PORT'], service_name=dbsettings['NAME'])
