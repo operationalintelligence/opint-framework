@@ -38,16 +38,34 @@ def processTimeWindowData(request):
 
     #datefrom = parse('28-FEB-20 23:00:00')
     #dateto = parse('05-MAR-20 00:00:00')
-    query = Q(~Q(issue_id_fk__observation_started__gt=dateto) & ~Q(issue_id_fk__observation_finished__lt=datefrom))
-    ret = getIssuesWithMets(query, topN=topN, metric = metric)
+    ret = getIssuesWithMets(datefrom, dateto, topN=topN, metric = metric)
     ret = addColorsAndNames(ret)
+    query = Q(Q(issue_id_fk__observation_started__lt=dateto) & Q(issue_id_fk__observation_finished__gt=datefrom))
     ticks, mesuresW, mesuresNF, colorsNF, colorsW = getHistogramData(ret, query)
     return JsonResponse({"Result":"OK", "issues": ret, "ticks":ticks, "mesuresW":mesuresW, "mesuresNF":mesuresNF,
                      "colorsNF":colorsNF, "colorsW":colorsW})
 
 
-def getIssuesWithMets(query, topN, metric):
+def getIssuesWithMets(datefrom, dateto, topN, metric):
+    query = Q(Q(issue_id_fk__observation_started__lt=dateto) & Q(issue_id_fk__observation_finished__gt=datefrom))
     issues = WorkflowIssueMetadata.objects.using('jobs_buster_persistency').select_related('issue_id_fk').filter(query)
+    queryEvidences = query & Q(Q(tick_time__lt=dateto) & Q(tick_time__gt=datefrom))
+    evidencesRows = WorkflowIssueTicks.objects.using('jobs_buster_persistency').select_related('issue_id_fk').filter(queryEvidences)
+    evidencesW = {}
+    evidencesNF = {}
+
+    for evidence in evidencesRows:
+        val = evidencesW.get(evidence.issue_id_fk.issue_id, 0)
+        val += evidence.walltime_loss
+        evidencesW[evidence.issue_id_fk.issue_id] = val
+        val = evidencesNF.get(evidence.issue_id_fk.issue_id, 0)
+        val += evidence.nFailed_jobs
+        evidencesNF[evidence.issue_id_fk.issue_id] = val
+
+    for issue in issues:
+        issue.issue_id_fk.nFailed_jobs = evidencesNF.get(issue.issue_id_fk.issue_id, 0)
+        issue.issue_id_fk.walltime_loss = evidencesW.get(issue.issue_id_fk.issue_id, 0)
+
     issuesMapper = IssuesMapper()
     for issue in issues:
         issuesMapper.addMetaData(issue)
