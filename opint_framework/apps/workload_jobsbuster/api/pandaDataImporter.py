@@ -15,7 +15,7 @@ def retreiveData(datefrom, dateto):
     dbsettings = settings.DATABASES['jobs_buster_jobs']
 
     query = """
-    SELECT /*+ INDEX_RS_ASC(ja JOBS_JEDITASKID_PANDAID_IDX) */ ja.STARTTIME, ja.ENDTIME, ja.ATLASRELEASE, ja.ATTEMPTNR, ja.AVGPSS,
+    SELECT  ja.STARTTIME, ja.ENDTIME, ja.ATLASRELEASE, ja.ATTEMPTNR, ja.AVGPSS,
             ja.AVGRSS, ja.AVGSWAP, ja.AVGVMEM, ja.BROKERAGEERRORCODE, ja.CLOUD, ja.CMTCONFIG, ja.COMPUTINGELEMENT, ja.COMPUTINGSITE, 
             ja.ACTUALCORECOUNT, ja.CPUCONSUMPTIONTIME, ja.CPUCONSUMPTIONUNIT, ja.CREATIONHOST, ja.CREATIONTIME, 
             ja.CURRENTPRIORITY, ja.DDMERRORCODE, ja.DDMERRORDIAG, ja.DESTINATIONSE, ja.DESTINATIONSITE, ja.EVENTSERVICE, ja.PILOTID, 
@@ -32,6 +32,7 @@ def retreiveData(datefrom, dateto):
             OR 
               (ja.STARTTIME > TO_DATE('{1}', 'YYYY-MM-DD HH24:MI:SS'))
             )
+            and ja.modificationtime >  TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS')
     """.format(datefrom, dateto)
 
     dsn_tns = cx_Oracle.makedsn(dbsettings['HOST'], dbsettings['PORT'], service_name=dbsettings['NAME'])

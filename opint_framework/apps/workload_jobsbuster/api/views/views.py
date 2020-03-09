@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 counter = 0
+OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 """
 API endpoint that allows SampleModel to be viewed or edited.
@@ -22,10 +23,9 @@ API endpoint that allows SampleModel to be viewed or edited.
 @api_view(['GET', 'POST'])
 def processTimeWindowData(request):
     if 'timewindow' in request.query_params:
-        timewindow = request.query_params['timewindow']
-        timewindow = json.loads(timewindow)
-        datefrom = timewindow['startdate']
-        dateto = timewindow['enddate']
+        timewindow = request.query_params['timewindow'].split('|')
+        datefrom = datetime.datetime.strptime(timewindow[0], OI_DATETIME_FORMAT)
+        dateto = datetime.datetime.strptime(timewindow[1], OI_DATETIME_FORMAT)
     else:
         dateto = datetime.datetime.utcnow()
         datefrom = datetime.datetime.utcnow() - datetime.timedelta(hours=12)
