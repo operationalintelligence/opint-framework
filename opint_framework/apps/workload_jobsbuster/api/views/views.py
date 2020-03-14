@@ -5,7 +5,9 @@ import datetime
 import os, json
 from dateutil.parser import parse
 from django.db.models import Q
-from opint_framework.apps.workload_jobsbuster.api.views.IssuesMapper import IssuesMapper
+from opint_framework.apps.workload_jobsbuster.api.views.IssueClass import Issue, IssueObservation
+from opint_framework.core.utils.common import freeze
+
 import matplotlib as mpl
 import matplotlib.cm as cm
 from django.http import JsonResponse
@@ -14,6 +16,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 counter = 0
+chunksize = 50
+
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 """
@@ -31,45 +35,80 @@ def processTimeWindowData(request):
         datefrom = datetime.datetime.utcnow() - datetime.timedelta(hours=12)
     topN = int(request.query_params['topn']) if 'topn' in request.query_params else 20
     metric = (request.query_params['metric']) if 'metric' in request.query_params else 'loss'
-    if metric == 'loss':
-        metric = 'sumWLoss'
-    elif metric == 'fails':
-        metric = 'sumJFails'
 
-    #datefrom = parse('28-FEB-20 23:00:00')
-    #dateto = parse('05-MAR-20 00:00:00')
-    ret = getIssuesWithMets(datefrom, dateto, topN=topN, metric = metric)
+    ret = getIssuesWithMets(datefrom, dateto, topN=topN, metric=metric)
     ret = addColorsAndNames(ret)
-    query = Q(Q(issue_id_fk__observation_started__lt=dateto) & Q(issue_id_fk__observation_finished__gt=datefrom))
-    ticks, mesuresW, mesuresNF, colorsNF, colorsW = getHistogramData(ret, query)
-    return JsonResponse({"Result":"OK", "issues": ret, "ticks":ticks, "mesuresW":mesuresW, "mesuresNF":mesuresNF,
+    ticks, mesuresW, mesuresNF, colorsNF, colorsW = getHistogramData(ret)
+    return JsonResponse({"Result":"OK", "issues": serialize(ret), "ticks":ticks, "mesuresW":mesuresW, "mesuresNF":mesuresNF,
                      "colorsNF":colorsNF, "colorsW":colorsW})
+
+
+def serialize(issues):
+    setIssues = []
+    for issue in issues:
+        issueDict = issue.__dict__
+        del issueDict['observations']
+        setIssues.append(issueDict)
+    return setIssues
 
 
 def getIssuesWithMets(datefrom, dateto, topN, metric):
     query = Q(Q(issue_id_fk__observation_started__lt=dateto) & Q(issue_id_fk__observation_finished__gt=datefrom))
-    issues = WorkflowIssueMetadata.objects.using('jobs_buster_persistency').select_related('issue_id_fk').filter(query)
-    queryEvidences = query & Q(Q(tick_time__lt=dateto) & Q(tick_time__gt=datefrom))
-    evidencesRows = WorkflowIssueTicks.objects.using('jobs_buster_persistency').select_related('issue_id_fk').filter(queryEvidences)
-    evidencesW = {}
-    evidencesNF = {}
+    issuesRaw = WorkflowIssueMetadata.objects.using('jobs_buster_persistency').select_related('issue_id_fk').filter(query)
+    issues = fillIssuesList(issuesRaw)
+    issues = addObservations(issues, query)
+    issues = mergeIssues(issues)
+    issues = getTopNIsses(issues, topN=topN, metric=metric)
+    return issues
 
-    for evidence in evidencesRows:
-        val = evidencesW.get(evidence.issue_id_fk.issue_id, 0)
-        val += evidence.walltime_loss
-        evidencesW[evidence.issue_id_fk.issue_id] = val
-        val = evidencesNF.get(evidence.issue_id_fk.issue_id, 0)
-        val += evidence.nFailed_jobs
-        evidencesNF[evidence.issue_id_fk.issue_id] = val
 
-    for issue in issues:
-        issue.issue_id_fk.nFailed_jobs = evidencesNF.get(issue.issue_id_fk.issue_id, 0)
-        issue.issue_id_fk.walltime_loss = evidencesW.get(issue.issue_id_fk.issue_id, 0)
+def getTopNIsses(issues, topN = 10, metric='sumWLoss'):
+    if metric == 'loss':
+        return sorted(issues, key=lambda x: x.walltime_loss, reverse=True)[:topN]
+    if metric == 'fails':
+        return sorted(issues, key=lambda x: x.nFailed_jobs, reverse=True)[:topN]
 
-    issuesMapper = IssuesMapper()
-    for issue in issues:
-        issuesMapper.addMetaData(issue)
-    return issuesMapper.getTopNIsses(topN=topN, metric=metric)
+
+def mergeIssues(issues):
+    norepeatIssues = {}
+    for issueid, issue in issues.items():
+        norepIssue = norepeatIssues.get(freeze(issue.features), None)
+        if norepIssue:
+            norepeatIssues[freeze(issue.features)] = norepIssue.merge(issue)
+        else:
+            norepeatIssues[freeze(issue.features)] = issue
+    return norepeatIssues.values()
+
+
+def fillIssuesList(issuesRaw):
+    issues = {}
+    for issueRaw in issuesRaw:
+        issue = issues.setdefault(issueRaw.issue_id_fk.issue_id, Issue())
+        issue.features[issueRaw.key] = issueRaw.value
+        issue.issueID = issueRaw.issue_id_fk.issue_id
+    return issues
+
+
+def addObservations(issues, query):
+    issuesToProcess = list(issues.keys())
+    observations = runDBObservationQuery(query)
+    for issueID in issuesToProcess:
+        if issueID in observations:
+            issues[issueID].observations = observations[issueID]
+    return issues
+
+
+def runDBObservationQuery(query):
+    observations = {}
+    observationsRows = WorkflowIssueTicks.objects.using('jobs_buster_persistency').select_related('issue_id_fk').filter(query)
+    for observation in observationsRows:
+        issueID = observation.issue_id_fk.issue_id
+        issueObservation = IssueObservation()
+        issueObservation.walltime_loss = observation.walltime_loss
+        issueObservation.nfailed_jobs = observation.nFailed_jobs
+        issueObservation.tick_time = observation.tick_time
+        observations.setdefault(issueID, []).append(issueObservation)
+    return observations
 
 
 def addColorsAndNames(issues):
@@ -77,31 +116,30 @@ def addColorsAndNames(issues):
         return issues
     cmap = plt.get_cmap('tab20c')
     colors = cmap(np.linspace(0, 1, len(issues)+1))
-
     for (issue,color) in zip(issues, colors):
-        issue['rgbaW'] = list(color)
-
+        issue.rgbaW = list(color)
     for index, issue in enumerate(issues):
-        issue['rgbaNF'] = list(colors[index])
-        issue['name'] = 'N_'+ str(index)
+        issue.rgbaNF = list(colors[index])
+        issue.name = 'N_'+ str(index)
     return issues
 
 
-def getHistogramData(issues, query):
-    histogramTicks = WorkflowIssueTicks.objects.using('jobs_buster_persistency').select_related('issue_id_fk').filter(query)
-    issuesIDsFiltered = [i['id'] for i in issues]
-    issuesNamesFiltered = {i['id']:i['name'] for i in issues}
-    colorsFilteredNF = {i['id']:i['rgbaNF'] for i in issues}
-    colorsFilteredW = {i['id']:i['rgbaW'] for i in issues}
+def getHistogramData(issues):
+    issuesIDsFiltered = [i.issueID for i in issues]
+    issuesNamesFiltered = {i.issueID:i.name for i in issues}
+    colorsFilteredNF = {i.issueID:i.rgbaNF for i in issues}
+    colorsFilteredW = {i.issueID:i.rgbaW for i in issues}
 
-    histogramTicks = filter(lambda x: x.issue_id_fk.issue_id in issuesIDsFiltered, histogramTicks)
     mesuresW = {}
     mesuresNF = {}
-    for histogramTick in histogramTicks:
-        entryW = mesuresW.setdefault(histogramTick.tick_time, {})
-        entryW[histogramTick.issue_id_fk.issue_id] = histogramTick.walltime_loss
-        entryNF = mesuresNF.setdefault(histogramTick.tick_time, {})
-        entryNF[histogramTick.issue_id_fk.issue_id] = histogramTick.nFailed_jobs
+
+    for issue in issues:
+        for tick in issue.observations:
+            entryW = mesuresW.setdefault(tick.tick_time, {})
+            entryW[issue.issueID] = tick.walltime_loss
+            entryNF = mesuresNF.setdefault(tick.tick_time, {})
+            entryNF[issue.issueID] = tick.nfailed_jobs
+
     ticks = list(mesuresW.keys())
     ticks.sort()
     mesuresWTransponed = {}

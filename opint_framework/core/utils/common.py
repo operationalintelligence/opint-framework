@@ -33,7 +33,6 @@ def getAgentsShedule():
 
 
 def getActiveAppSetting(settingsToScan):
-
     modulesSettings = {}
     appsDirName = os.path.dirname(opint_framework.apps.__file__)
     for modulename in os.listdir(appsDirName):
@@ -68,3 +67,11 @@ class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
             return o.isoformat()
+
+
+def freeze(d):
+    if isinstance(d, dict):
+        return frozenset((key, freeze(value)) for key, value in d.items())
+    elif isinstance(d, list):
+        return tuple(freeze(value) for value in d)
+    return d
