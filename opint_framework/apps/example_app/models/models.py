@@ -1,7 +1,7 @@
 from django.db import models
 
 
-class SampleModel(models.Model):
+class Sample(models.Model):
     """
     Sample Model.
     """

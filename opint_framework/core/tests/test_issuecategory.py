@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 from opint_framework.core.models import IssueCategory
 
 
-class ActionViewSetTestCase(APITestCase):
+class IssueCategoryViewSetTestCase(APITestCase):
     list_url = reverse('issuecategory-list')
 
     def test_list_issuecategories(self):
@@ -36,7 +36,7 @@ class ActionViewSetTestCase(APITestCase):
 
         self.assertEquals(res.status_code, status.HTTP_200_OK)
 
-    def test_action_detail_invalid(self):
+    def test_issuecategory_detail_invalid(self):
         detail_url = reverse('issuecategory-detail', args=[9999])
         res = self.client.get(detail_url)
 

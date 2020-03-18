@@ -1,1 +1,1 @@
-from .models import SampleModel  # noqa: F401
+from .models import Sample  # noqa: F401

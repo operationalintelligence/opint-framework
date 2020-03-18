@@ -5,7 +5,7 @@ from rest_framework.test import APITestCase
 from opint_framework.core.models import Action, Solution
 
 
-class ActionViewSetTestCase(APITestCase):
+class SolutionViewSetTestCase(APITestCase):
     list_url = reverse('solution-list')
 
     def test_list_solutions(self):
@@ -45,7 +45,7 @@ class ActionViewSetTestCase(APITestCase):
 
         self.assertEquals(res.status_code, status.HTTP_200_OK)
 
-    def test_action_detail_invalid(self):
+    def test_solution_detail_invalid(self):
         detail_url = reverse('solution-detail', args=[9999])
         res = self.client.get(detail_url)
 
