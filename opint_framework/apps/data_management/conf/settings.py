@@ -12,3 +12,11 @@ POLLING_TIME = {
 }
 
 API_PREFIX = "ddm/api"
+
+DATABASES = {
+    'default': {},
+    'rucio_opint': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'rucio_opint',
+    }
+}
