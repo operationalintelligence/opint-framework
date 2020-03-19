@@ -112,7 +112,7 @@ class JobsAnalyserAgent(BaseAgent):
         frame['ENDTIME'] = frame['ENDTIME'].astype('datetime64')
         frame['STARTTIME'] = frame['STARTTIME'].astype('datetime64')
 
-        frame['ACTUALCORECOUNT'] = frame['ACTUALCORECOUNT'].apply(lambda x: x if x and x > 0 else 1)
+#        frame['ACTUALCORECOUNT'] = frame['ACTUALCORECOUNT'].apply(lambda x: x if x and x > 0 else 1)
         frame['LOSTWALLTIME'] = (frame['ENDTIME'] - frame['STARTTIME']) / np.timedelta64(1, 's') * frame[
             'ACTUALCORECOUNT']
         frame['LOSTWALLTIME'] = frame.apply(lambda x: x.LOSTWALLTIME if x.JOBSTATUS == 'failed' else 0, axis=1)
@@ -129,12 +129,12 @@ class JobsAnalyserAgent(BaseAgent):
         newframe['COMPUTINGELEMENT'] = frame['COMPUTINGELEMENT']
         newframe['CREATIONHOST'] = frame['CREATIONHOST']
         newframe['DESTINATIONSE'] = frame['DESTINATIONSE']
-        newframe['EVENTSERVICE'] = frame['EVENTSERVICE'].apply(str)
+#        newframe['EVENTSERVICE'] = frame['EVENTSERVICE'].apply(str)
         newframe['PROCESSINGTYPE'] = frame['PROCESSINGTYPE']
         newframe['PRODUSERNAME'] = frame['PRODUSERNAME']
         newframe['RESOURCE_TYPE'] = frame['RESOURCE_TYPE']
         newframe['SPECIALHANDLING'] = frame['SPECIALHANDLING']
-        newframe['GSHARE'] = frame['GSHARE']
+#       newframe['GSHARE'] = frame['GSHARE']
         newframe['HOMEPACKAGE'] = frame['HOMEPACKAGE']
         newframe['INPUTFILEPROJECT'] = frame['INPUTFILEPROJECT']
         newframe['INPUTFILETYPE'] = frame['INPUTFILETYPE']
