@@ -112,7 +112,7 @@ class JobsAnalyserAgent(BaseAgent):
         frame['ENDTIME'] = frame['ENDTIME'].astype('datetime64')
         frame['STARTTIME'] = frame['STARTTIME'].astype('datetime64')
 
-#        frame['ACTUALCORECOUNT'] = frame['ACTUALCORECOUNT'].apply(lambda x: x if x and x > 0 else 1)
+        frame['ACTUALCORECOUNT'] = frame['ACTUALCORECOUNT'].apply(lambda x: x if x and x > 0 else 1)
         frame['LOSTWALLTIME'] = (frame['ENDTIME'] - frame['STARTTIME']) / np.timedelta64(1, 's') * frame[
             'ACTUALCORECOUNT']
         frame['LOSTWALLTIME'] = frame.apply(lambda x: x.LOSTWALLTIME if x.JOBSTATUS == 'failed' else 0, axis=1)
@@ -148,7 +148,7 @@ class JobsAnalyserAgent(BaseAgent):
 
         # Numerical with NA
         newframe['ENDTIME'] = frame['ENDTIME']
-        newframe['ACTUALCORECOUNT'] = frame['ACTUALCORECOUNT']
+#        newframe['ACTUALCORECOUNT'] = frame['ACTUALCORECOUNT']
         newframe['LOSTWALLTIME'] = (frame['LOSTWALLTIME'])
         newframe['NINPUTDATAFILES'] = frame['NINPUTDATAFILES']
 

@@ -19,6 +19,11 @@ API_PREFIX = "jobsbuster/api"
 
 datafilespath = "/tmp/"
 
+DB_JOBS_USER = ''
+DB_JOBS_PASS = ''
+DB_PERS_USER = ''
+DB_PERS_PASS = ''
+
 exec(open(str(Path.home())+"/private/db_settings.py").read())
 
 DATABASES = {
