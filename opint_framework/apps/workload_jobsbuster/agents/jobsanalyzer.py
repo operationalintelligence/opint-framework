@@ -55,7 +55,7 @@ class JobsAnalyserAgent(BaseAgent):
         #pickle.dump(listOfProblems, open(settings.datafilespath + "rawdataframe0_daily2.sr", 'wb+'))
         #listOfProblems = pickle.load(open(settings.datafilespath + "rawdataframe0_daily2.sr", 'rb'))
 
-        self.removeIssuesNewerThan(datefrom)
+        #self.removeIssuesNewerThan(datefrom)
 
         for spottedProblem in listOfProblems:
             issue = WorkflowIssue.objects.using('jobs_buster_persistency').create(session_id_fk=dbsession,
@@ -130,7 +130,7 @@ class JobsAnalyserAgent(BaseAgent):
         newframe['CREATIONHOST'] = frame['CREATIONHOST']
         newframe['DESTINATIONSE'] = frame['DESTINATIONSE']
 #        newframe['EVENTSERVICE'] = frame['EVENTSERVICE'].apply(str)
-        newframe['PROCESSINGTYPE'] = frame['PROCESSINGTYPE']
+#       newframe['PROCESSINGTYPE'] = frame['PROCESSINGTYPE']
         newframe['PRODUSERNAME'] = frame['PRODUSERNAME']
         newframe['RESOURCE_TYPE'] = frame['RESOURCE_TYPE']
         newframe['SPECIALHANDLING'] = frame['SPECIALHANDLING']
@@ -296,7 +296,8 @@ class JobsAnalyserAgent(BaseAgent):
                 pass
 
         elif parentIssue is not None:
-            listOfProblems.append(parentIssue)
+            if parentIssue.nFailedJobs > 0:
+                listOfProblems.append(parentIssue)
             # print("\nAdding issue #", counter, " deepness:", deepnesslog)
             # print("Parent features:", parentIssue.features)
             # print("nSuccessJobs:", parentIssue.nSuccessJobs, " nFailedJobs:", parentIssue.nFailedJobs)
@@ -309,7 +310,7 @@ class JobsAnalyserAgent(BaseAgent):
             if (nestedIssue.purity > parentIssue.purity and parentIssue.nSuccessJobs > 0 and parentIssue.nFailedJobs > 0) or not self.checkDFEligible(
                     frame_loc):
                 self.classifyIssue(frame_loc, listOfProblems, nestedIssue, deepnesslog + 1)
-            else:
+            elif parentIssue.nFailedJobs > 0:
                 listOfProblems.append(parentIssue)
                 # print("\nAdding issue #", counter, " deepness:", deepnesslog)
                 # print("Parent features:", parentIssue.features)
