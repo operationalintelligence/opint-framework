@@ -95,6 +95,11 @@ def addObservations(issues, query):
     for issueID in issuesToProcess:
         if issueID in observations:
             issues[issueID].observations = observations[issueID]
+        if issues[issueID].observations:
+            issues[issueID].walltime_loss = sum(i.walltime_loss for i in issues[issueID].observations)
+            issues[issueID].nFailed_jobs = sum(i.nfailed_jobs for i in issues[issueID].observations)
+            issues[issueID].observation_started = min(i.tick_time for i in issues[issueID].observations)
+            issues[issueID].observation_finished = max(i.tick_time for i in issues[issueID].observations)
     return issues
 
 
