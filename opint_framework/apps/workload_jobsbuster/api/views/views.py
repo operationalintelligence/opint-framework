@@ -92,6 +92,7 @@ def fillIssuesList(issuesRaw):
 def addObservations(issues, query):
     issuesToProcess = list(issues.keys())
     observations = runDBObservationQuery(query)
+    filtered_issues = {}
     for issueID in issuesToProcess:
         if issueID in observations:
             issues[issueID].observations = observations[issueID]
@@ -100,7 +101,9 @@ def addObservations(issues, query):
             issues[issueID].nFailed_jobs = sum(i.nfailed_jobs for i in issues[issueID].observations)
             issues[issueID].observation_started = min(i.tick_time for i in issues[issueID].observations)
             issues[issueID].observation_finished = max(i.tick_time for i in issues[issueID].observations)
-    return issues
+        if issues[issueID].nFailed_jobs > 0:
+            filtered_issues[len(filtered_issues)] = issues[issueID]
+    return filtered_issues
 
 
 def runDBObservationQuery(query):
