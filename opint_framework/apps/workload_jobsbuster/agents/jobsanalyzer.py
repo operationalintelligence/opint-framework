@@ -19,6 +19,7 @@ diagfields = ['DDMERRORDIAG', 'BROKERAGEERRORDIAG', 'DDMERRORDIAG', 'EXEERRORDIA
 diagcodefields = ['BROKERAGEERRORCODE', 'DDMERRORCODE', 'EXEERRORCODE', 'JOBDISPATCHERERRORCODE', 'PILOTERRORCODE',
              'SUPERRORCODE', 'TASKBUFFERERRORCODE', 'TRANSEXITCODE']
 
+OI_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class JobsAnalyserAgent(BaseAgent):
     lock = threading.RLock()
@@ -35,8 +36,11 @@ class JobsAnalyserAgent(BaseAgent):
         print("JobsAnalyserAgent started")
         lastSession = AnalysisSessions.objects.using('jobs_buster_persistency').order_by('-timewindow_end').first()
 
-        datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=1200)
+        datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=12*60)
         dateto = datetime.datetime.utcnow()
+
+        #datefrom = datetime.datetime.strptime("2020-03-25 13:15:00", OI_DATETIME_FORMAT)
+        #dateto = datetime.datetime.strptime("2020-03-25 14:15:00", OI_DATETIME_FORMAT)
 
         dbsession = AnalysisSessions.objects.using('jobs_buster_persistency').create(timewindow_start=datefrom,
                                                                                      timewindow_end=dateto)
@@ -75,6 +79,7 @@ class JobsAnalyserAgent(BaseAgent):
             ticks = self.historgramFailures(spottedProblem.filterByIssue(preprocessedFrame), spottedProblem)
             self.saveFailureTicks(ticks, issue)
 
+        AnalysisSessions.objects.using('jobs_buster_persistency').filter(analysis_finished__isnull=False).delete()
         dbsession.analysis_finished = datetime.datetime.now(datetime.timezone.utc)
         dbsession.save(using='jobs_buster_persistency')
         print("JobsAnalyserAgent finished")
@@ -117,11 +122,11 @@ class JobsAnalyserAgent(BaseAgent):
         newframe = pd.DataFrame()
 
         # Cathegorial
-        newframe['ATLASRELEASE'] = frame['ATLASRELEASE']
+#        newframe['ATLASRELEASE'] = frame['ATLASRELEASE']
 #        newframe['PILOTVERSION'] = frame['PILOTID'].apply(
 #            lambda x: x.split('|')[-1] if x and '|' in x else 'Not specified').str.replace(" ", "%20")
-        newframe['CLOUD'] = frame['CLOUD']
-        newframe['CMTCONFIG'] = frame['CMTCONFIG']
+#        newframe['CLOUD'] = frame['CLOUD']
+#        newframe['CMTCONFIG'] = frame['CMTCONFIG']
         newframe['COMPUTINGSITE'] = frame['COMPUTINGSITE']
         newframe['COMPUTINGELEMENT'] = frame['COMPUTINGELEMENT']
         newframe['CREATIONHOST'] = frame['CREATIONHOST']
@@ -129,17 +134,17 @@ class JobsAnalyserAgent(BaseAgent):
 #        newframe['EVENTSERVICE'] = frame['EVENTSERVICE'].apply(str)
 #       newframe['PROCESSINGTYPE'] = frame['PROCESSINGTYPE']
         newframe['PRODUSERNAME'] = frame['PRODUSERNAME']
-        newframe['RESOURCE_TYPE'] = frame['RESOURCE_TYPE']
-        newframe['SPECIALHANDLING'] = frame['SPECIALHANDLING']
+#        newframe['RESOURCE_TYPE'] = frame['RESOURCE_TYPE']
+#        newframe['SPECIALHANDLING'] = frame['SPECIALHANDLING']
 #       newframe['GSHARE'] = frame['GSHARE']
-        newframe['HOMEPACKAGE'] = frame['HOMEPACKAGE']
-        newframe['INPUTFILEPROJECT'] = frame['INPUTFILEPROJECT']
-        newframe['INPUTFILETYPE'] = frame['INPUTFILETYPE']
+#        newframe['HOMEPACKAGE'] = frame['HOMEPACKAGE']
+#        newframe['INPUTFILEPROJECT'] = frame['INPUTFILEPROJECT']
+#        newframe['INPUTFILETYPE'] = frame['INPUTFILETYPE']
         newframe['JEDITASKID'] = frame['JEDITASKID'].apply(str)
         newframe['JOBSTATUS'] = frame['JOBSTATUS'].apply(str)
         newframe['NUCLEUS'] = frame['NUCLEUS'].apply(str)
-        newframe['TRANSFORMATION'] = frame['TRANSFORMATION']
-        newframe['WORKINGGROUP'] = frame['WORKINGGROUP']
+#        newframe['TRANSFORMATION'] = frame['TRANSFORMATION']
+#        newframe['WORKINGGROUP'] = frame['WORKINGGROUP']
         newframe['REQID'] = frame['REQID'].apply(str)
 
         # Errors data
@@ -165,7 +170,7 @@ class JobsAnalyserAgent(BaseAgent):
         newframe['ENDTIME'] = frame['ENDTIME']
 #        newframe['ACTUALCORECOUNT'] = frame['ACTUALCORECOUNT']
         newframe['LOSTWALLTIME'] = (frame['LOSTWALLTIME'])
-        newframe['NINPUTDATAFILES'] = frame['NINPUTDATAFILES']
+#        newframe['NINPUTDATAFILES'] = frame['NINPUTDATAFILES']
 
         newframe['ISSUCCESS'] = frame['JOBSTATUS'].apply(lambda x: 0 if x and x == 'failed' else 1)
         newframe['ISFAILED'] = frame['JOBSTATUS'].apply(lambda x: 1 if x and x == 'failed' else 0)
@@ -180,10 +185,10 @@ class JobsAnalyserAgent(BaseAgent):
 
         frequencyW = newframe.groupby('combinederrors').agg(
             {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
-             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('LOSTWALLTIME', 'sum'), ascending=False).head(40)
+             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('LOSTWALLTIME', 'sum'), ascending=False).head(50)
         frequencyF = newframe.groupby('combinederrors').agg(
             {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
-             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False).head(40)
+             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False).head(50)
         self.errFrequency = pd.concat([frequencyW, frequencyF])
         for i, row in self.errFrequency.iterrows():
             if row[4] == row[5]:
@@ -266,7 +271,7 @@ class JobsAnalyserAgent(BaseAgent):
                 iterations=200,
                 random_seed=2,
                 logging_level='Silent',
-                depth=3,
+                depth=5,
                 learning_rate=0.01,
                 task_type="CPU",
                 train_dir=tmpdirname,

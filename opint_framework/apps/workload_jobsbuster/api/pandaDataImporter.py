@@ -30,8 +30,8 @@ def retreiveData(datefrom, dateto):
             WHERE ja.JOBSTATUS in ('failed','finished') and ja.PRODSOURCELABEL='managed' and not ja.endtime is null and
                 (
                   (ja.endtime > TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS'))
-                OR 
-                  (ja.STARTTIME > TO_DATE('{1}', 'YYYY-MM-DD HH24:MI:SS'))
+                and 
+                  (ja.STARTTIME < TO_DATE('{1}', 'YYYY-MM-DD HH24:MI:SS'))
                 )
                 and ja.modificationtime >  TO_DATE('{0}', 'YYYY-MM-DD HH24:MI:SS')
         """.format(datefrom, dateto)
