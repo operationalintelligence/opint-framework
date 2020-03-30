@@ -4,10 +4,8 @@ from text_parsing_utils import split_urls, clean_tokens
 
 class LucaTokenization(Tokenization):
 
-    def __init__(self, ctx, err_col="t__error_message", id_col="msg_id"):
+    def __init__(self, ctx):
         super(LucaTokenization, self).__init__(ctx)
-        self.ctx.err_col = err_col
-        self.ctx.id_col = id_col
 
     def tokenize_messages(self, **kwargs):
         err_col = self.ctx['err_col']
@@ -54,7 +52,7 @@ class LucaTokenization(Tokenization):
         pass
 
     def get_vocabulary(self, tokenized):
-        pass
+        raise NotImplementedError
 
     def tokenize_string(self, tokenizer, row):
         pass

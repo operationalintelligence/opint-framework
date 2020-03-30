@@ -1,6 +1,7 @@
 from pyspark.shell import spark
 from pyspark.sql import SparkSession
 from opint_framework.apps.example_app.nlp.luca.tokenization import LucaTokenization
+from opint_framework.apps.example_app.nlp.luca.vectorization import LucaVectorization
 from opint_framework.core.nlp.nlp import NLPAdapter
 import pyspark.sql.functions as F
 
@@ -10,7 +11,7 @@ class LucaNLPAdapter(NLPAdapter):
     def __init__(self, path_list, vo, id_col="msg_id", timestamp_tr_x="timestamp_tr_comp"):
         NLPAdapter.__init__(self,
                             tokenization=LucaTokenization(self.context),
-                            vectorization=None,
+                            vectorization=LucaVectorization(self.context),
                             clusterization=None)
         self.context['spark'] = SparkSession.builder.master("local[*]").appName("sample_app_inference").getOrCreate()
         self.context['path_list'] = path_list
