@@ -60,7 +60,7 @@ class LucaTokenization(Tokenization):
 
         return (vector_data)
 
-    def detokenize_messages(self, tokenized, err_col):
+    def detokenize_messages(self, tokenized, tks_col):
         """Takes pyspark dataframe \"tokenized\" where \"err_col\" contains list of tokens
         and return a dataframe with the additional \"message_string\" column where tkens are joint back.
         """
@@ -76,7 +76,7 @@ class LucaTokenization(Tokenization):
         detokenize_udf = udf(lambda entry: " ".join(entry), StringType())
 
         # detokenize
-        tokenized = tokenized.withColumn("message_string", detokenize_udf(err_col))
+        tokenized = tokenized.withColumn("message_string", detokenize_udf(tks_col))
 
         return(tokenized)
 
@@ -91,3 +91,24 @@ class LucaTokenization(Tokenization):
 
     def detokenize_string(self, tokenizer, sequence):
         pass
+
+    def abstract_params(self, dataset, tks_col="tokens_cleaned", out_col="abstract_message"):
+        """Abstract parameters from a column of tokens lists.
+
+        -- params:
+        dataset (pyspark.sql.dataframe.DataFrame): data frame with at least a column containg lists of tokens
+        tks_col (string): name of the tokens lists column
+        out_col (string): name of the column where to store abstracted tokens
+
+        Returns:
+        dataset (pyspark.sql.dataframe.DataFrame): the input dataset with an extra
+                        out_col column with abstracted tokens
+        """
+        from pyspark.sql.functions import udf
+        from pyspark.sql.types import StringType, ArrayType
+        from abstraction_utils import abstract_message
+        # transform in user defined function
+        abstract_message_udf = udf(abstract_message, ArrayType(StringType()))
+
+        dataset = dataset.withColumn(out_col, abstract_message_udf(tks_col))
+        return (dataset)
