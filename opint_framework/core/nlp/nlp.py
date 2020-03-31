@@ -208,3 +208,65 @@ class Tokenization(ABC):
         """
         return NotImplementedError
 
+
+
+
+class Clustering(ABC):
+
+    def __init__(self, ctx):
+        super(Clustering, self).__init__()
+        self.ctx = ctx
+
+    def data_preparataion(self, messages):
+        """
+        Prepare data for clustering. Optional procedure. It can be used to convert input features to proper data formats (e.g. pyspark friendly)
+
+        **Note**: Use the self.ctx to set or fetch additional parameters required by your implementation
+
+        :param messages: dataframe of log messages
+        :type messages: array of strings or log file or pyspark.sql.dataframe.DataFrame.
+        :return: data to feed into the clustering algorithm
+        """
+        pass
+
+    @abstractmethod
+    def train_model(self, messages, path_to_model, **kwargs):
+        """
+        Train clustering algorithm and (optionally) save it for further usage
+
+        :param list[str]/filepath messages: log messages
+        :param str path_to_model: path to file, where clustering model must be stored
+        :param int embedding_size: size of embedding vector
+        :param optinal kwargs: additional params specific for the clustering algorithm of the child class
+        :return trained model (or reference to it), possibly with some performance metrics attached
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def load_model(self, path_to_model):
+        """
+        Load pre-trained clustering model and return model object.
+        :param str path_to_model: path to file, where clustering model is stored
+        :return model object
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def update_model(self, path_to_model, tokenized):
+        """
+        Load pre-trained clustering model, update it, and return model object.
+        :param str path_to_model: path to file, where word2vec model is stored
+        :param list(list(str)) tokenized: new tokenized log messages
+        :return updated word2vec object
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def predict(self, model, tokenized, **kwargs):
+        """
+        Apply the pre-trained algorithm in model and output the clusters discovered in the tokenized data.
+        :param model: clustering model
+        :param tokenized: tokenized log messages
+        :return data with cluster label prediction according to the clustering model
+        """
+        raise NotImplementedError
