@@ -6,9 +6,45 @@ class LucaVectorization(Vectorization):
     def __init__(self, ctx):
         super(LucaVectorization, self).__init__(ctx)
 
-    def train_model(self, messages, path_to_model, embedding_size=300, window=7, min_count=1, workers=1,
-                    training_algorithm=1, iter=10):
-        pass
+    def train_model(self, messages, path_to_model=None, embedding_size=150, window=8, min_count=500, workers=12,
+                    # training_algorithm=None, iter=None, # unused parent params
+                    # additional params
+                    tks_col="stop_token_1", id_col="msg_id", out_col='message_vector', mode="new"
+                    ):
+        """Train Word2Vec model on the input tokens column.
+
+        -- params:
+        messages (pyspark.sql.dataframe.DataFrame): data frame with at least error string and id columns
+        tks_col (string): name of the column containing the lists of tokens to feed into the word2vec model
+        id_col (string): name of the message id column
+        out_col (string): name of the output column for the word2vec vector representation of the messages
+        embedding_size (int): dimension of the word2vec embedded space
+        min_count (int): minimum frequency for tokens to be considered in the training
+        window (int): window size for word2vec model
+        path_to_model (string): path where to save the trained model. Default is None (no saving)
+        mode ("new" or "overwrite"): whether to save new file or overwrite pre-existing one.
+        workers (int): number of cores for word2vec training
+
+        Returns:
+        model (pyspark.ml.feature.Word2VecModel): trained Word2vec model
+        """
+        from pyspark.ml.feature import Word2Vec
+
+        # intialise word2vec
+        word2vec = Word2Vec(vectorSize=embedding_size, minCount=min_count, windowSize=window,
+                            inputCol=tks_col, outputCol=out_col, numPartitions=workers)
+
+        train_data = messages.select(id_col, tks_col)
+        model = word2vec.fit(train_data)
+
+        if save_path:
+            outname = "{}/w2v_sample_app_example_VS={}_MC={}_WS={}".format(path_to_model, embedding_size, min_count, window)
+            if mode == "overwrite":
+                model.write().overwrite().save(outname)
+            else:
+                model.save(outname)
+
+        return (model)
 
     def load_model(self, path_to_model):
         pass
