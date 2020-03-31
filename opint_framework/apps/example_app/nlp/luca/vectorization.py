@@ -47,10 +47,17 @@ class LucaVectorization(Vectorization):
         return (model)
 
     def load_model(self, path_to_model):
-        pass
+        """Load Word2Vec model from model_path."""
+        from pyspark.ml.feature import Word2VecModel
+
+        w2vec_model = Word2VecModel.load(path_to_model)
+        return(w2vec_model)
 
     def update_model(self, path_to_model, tokenized):
         pass
 
     def vectorize_messages(self, word2vec, tokenized):
-        pass
+        """ Return word2vec emdeding of input tokens."""
+        vector_data = word2vec.transform(tokenized)
+
+        return(vector_data)
