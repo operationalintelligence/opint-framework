@@ -8,6 +8,21 @@ class LucaTokenization(Tokenization):
         super(LucaTokenization, self).__init__(ctx)
 
     def tokenize_messages(self, **kwargs):
+        """Take input message and split it into tokens.
+
+            -- params (given by the parent class LucaTokenization):
+            dataset (pyspark.sql.dataframe.DataFrame): data frame with at least error string and id columns
+            err_col (string): name of the error string column
+            id_col (string): name of the message id column
+
+            Returns:
+            vector_data (pyspark.sql.dataframe.DataFrame): data frame with id_col, err_col and additional tokenization steps:
+                                             corrected_message --> string with corrected urls
+                                             tokens --> list of tokens taken from corrected_message
+                                             tokens_cleaned --> list of tokens cleaned from punctuation and empty entries
+                                             stop_token --> list of tokens after removing common english stopwords
+                                             stop_token_1 --> list of tokens after removing custom stopwords, i.e. ["", ":", "-", "+"]
+        """
         err_col = self.ctx['err_col']
         id_col = self.ctx['id_col']
         dataset = self.ctx['dataset']
@@ -45,8 +60,25 @@ class LucaTokenization(Tokenization):
 
         return (vector_data)
 
-    def detokenize_messages(self, tokenizer, tokenized):
-        pass
+    def detokenize_messages(self, tokenized, err_col):
+        """Takes pyspark dataframe \"tokenized\" where \"err_col\" contains list of tokens
+        and return a dataframe with the additional \"message_string\" column where tkens are joint back.
+        """
+        # err_col = self.ctx['err_col']
+        # id_col = self.ctx['id_col']
+        # dataset = self.ctx['dataset']
+
+        # import pyspark.sql.functions as F
+        from pyspark.sql.functions import udf
+        from pyspark.sql.types import StringType
+
+        # transform row entry from list of tokens to string
+        detokenize_udf = udf(lambda entry: " ".join(entry), StringType())
+
+        # detokenize
+        tokenized = tokenized.withColumn("message_string", detokenize_udf(err_col))
+
+        return(tokenized)
 
     def clean_tokens(self, tokenized):
         pass
