@@ -56,7 +56,8 @@ class LucaVectorization(Vectorization):
     def update_model(self, path_to_model, tokenized):
         pass
 
-    def vectorize_messages(self, word2vec, tokenized):
+    def vectorize_messages(self, word2vec, tokenized): # LUCA: I'd probably change into w2v_path, tokenized, so the function
+                                                        # loads pre-trained w2v and gets vector representation for tokenized df
         """ Return word2vec emdeding of input tokens."""
         vector_data = word2vec.transform(tokenized)
 

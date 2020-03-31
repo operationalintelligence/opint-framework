@@ -47,7 +47,7 @@ class LucaTokenization(Tokenization):
         clean_tokens_udf = udf(lambda entry: clean_tokens(entry, custom_split=True), ArrayType(StringType()))
 
         # clean tokens
-        vector_data = vector_data.withColumn("tokens_cleaned", clean_tokens_udf("tokens"))
+        token_data = token_data.withColumn("tokens_cleaned", clean_tokens_udf("tokens"))
 
         # remove stop (common, non-relevant) words
         stop_remove = StopWordsRemover(inputCol="tokens_cleaned", outputCol="stop_token")
@@ -55,10 +55,10 @@ class LucaTokenization(Tokenization):
 
         data_prep_pipeline = Pipeline(stages=[stop_remove, stop_remove1])
 
-        pipeline_executor = data_prep_pipeline.fit(vector_data)
-        vector_data = pipeline_executor.transform(vector_data)
+        pipeline_executor = data_prep_pipeline.fit(token_data)
+        token_data = pipeline_executor.transform(token_data)
 
-        return (vector_data)
+        return (token_data)
 
     def detokenize_messages(self, tokenized, tks_col):
         """Takes pyspark dataframe \"tokenized\" where \"err_col\" contains list of tokens
