@@ -7,11 +7,11 @@ class LucaClustering(Clustering):
         super(LucaClustering, self).__init__(ctx)
 
     def data_preparataion(self, messages, tks_vec):
-    """Take input dataset with Word2Vec representation in tks_vec column and properly format to feed into pyspark.ml.KMeans."""
-    from pyspark.ml.feature import VectorAssembler
-    vec_assembler = VectorAssembler(inputCols=[tks_vec], outputCol='features')
-    messages = vec_assembler.transform(messages)
-    return (messages)
+        """Take input dataset with Word2Vec representation in tks_vec column and properly format to feed into pyspark.ml.KMeans."""
+        from pyspark.ml.feature import VectorAssembler
+        vec_assembler = VectorAssembler(inputCols=[tks_vec], outputCol='features')
+        messages = vec_assembler.transform(messages)
+        return (messages)
 
     def train_model(self, messages, k, path_to_model=None, ft_col='features', distance="cosine",
                     initSteps=10, tol=0.0001, maxIter=30, mode="new", log_path=None):
@@ -81,7 +81,6 @@ class LucaClustering(Clustering):
 
         return {"model": model_fit, "wsse": wsse, "asw": silhouette}
 
-    @abstractmethod
     def load_model(self, path_to_model):
         """Load K-Means model from path_to_model."""
         from pyspark.ml.clustering import KMeansModel
@@ -149,35 +148,35 @@ class LucaClustering(Clustering):
         return (res)
 
     def predict(self, model, tokenized, pred_mode="static", new_cluster_thresh=None, update_model_path=None):
-    """Predict cluster for new observations.
+        """Predict cluster for new observations.
 
-    -- params:
-    messages (pyspark.sql.dataframe.DataFrame): data frame with a vector column with features for the kmeans algorithm
-    model (pyspark.ml.clustering.KMeansModel): re-trained kmeans model
-    pred_mode ("static" or "update"): prediction mode: "static" does not allow for creating new clusters
-    distance ("euclidean" or "cosine"): distance measure for the kmeans algorithm
-    new_cluster_thresh (float): distance threshold: if closest centroid is more distant than new_cluster_thresh
-                                then a new cluster is created for the new observation
-    update_model_path (string): where to save update kmeans model
+        -- params:
+        messages (pyspark.sql.dataframe.DataFrame): data frame with a vector column with features for the kmeans algorithm
+        model (pyspark.ml.clustering.KMeansModel): re-trained kmeans model
+        pred_mode ("static" or "update"): prediction mode: "static" does not allow for creating new clusters
+        distance ("euclidean" or "cosine"): distance measure for the kmeans algorithm
+        new_cluster_thresh (float): distance threshold: if closest centroid is more distant than new_cluster_thresh
+                                    then a new cluster is created for the new observation
+        update_model_path (string): where to save update kmeans model
 
-    Returns:
-    pred (pyspark.sql.dataframe.DataFrame): the input data frame with an extra "prediction" column
-    """
-    if pred_mode not in ["static", "update"]:
-        print("""WARNING: invalid param \"pred_mode\". Specify either \"static\" to train load a pre-trained model 
-              or \"update\" to train it online.""")
-        return (None)
-    if pred_mode == "static":
-        pred = model.transform(tokenized)
-    else:
-        # take centroids
-        # compute distances of each message from each centroid
-        # select closest centroid per each meassage
-        # initialize new clusters when closest centroid distance is greater than new_cluster_thresh
-        # update centroids and points in each cluster
-        # save updated model
-        update_model_path = "temp_filename"  # temporary to avoid accidental overwriting
-        model.write().overwrite().save(update_model_path)
-        pred = None
+        Returns:
+        pred (pyspark.sql.dataframe.DataFrame): the input data frame with an extra "prediction" column
+        """
+        if pred_mode not in ["static", "update"]:
+            print("""WARNING: invalid param \"pred_mode\". Specify either \"static\" to train load a pre-trained model 
+                  or \"update\" to train it online.""")
+            return (None)
+        if pred_mode == "static":
+            pred = model.transform(tokenized)
+        else:
+            # take centroids
+            # compute distances of each message from each centroid
+            # select closest centroid per each meassage
+            # initialize new clusters when closest centroid distance is greater than new_cluster_thresh
+            # update centroids and points in each cluster
+            # save updated model
+            update_model_path = "temp_filename"  # temporary to avoid accidental overwriting
+            model.write().overwrite().save(update_model_path)
+            pred = None
 
-    return (pred)
+        return (pred)
