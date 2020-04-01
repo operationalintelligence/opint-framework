@@ -1,5 +1,5 @@
 from opint_framework.core.nlp.nlp import Clustering
-from kmeans import *
+from opint_framework.apps.example_app.nlp.luca.kmeans import *
 
 class LucaClustering(Clustering):
 

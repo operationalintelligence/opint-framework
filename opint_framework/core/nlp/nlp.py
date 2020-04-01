@@ -209,13 +209,12 @@ class Tokenization(ABC):
         return NotImplementedError
 
 
-
-
 class Clustering(ABC):
     def __init__(self, ctx):
         super(Clustering, self).__init__()
         self.ctx = ctx
 
+    @abstractmethod
     def data_preparataion(self, messages):
         """
         Prepare data for clustering. Optional procedure. It can be used to convert input features to proper data formats (e.g. pyspark friendly)

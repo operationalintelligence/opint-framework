@@ -2,6 +2,7 @@ from pyspark.shell import spark
 from pyspark.sql import SparkSession
 from opint_framework.apps.example_app.nlp.luca.tokenization import LucaTokenization
 from opint_framework.apps.example_app.nlp.luca.vectorization import LucaVectorization
+from opint_framework.apps.example_app.nlp.luca.clustering import LucaClustering
 from opint_framework.core.nlp.nlp import NLPAdapter
 import pyspark.sql.functions as F
 
@@ -12,7 +13,7 @@ class LucaNLPAdapter(NLPAdapter):
         NLPAdapter.__init__(self,
                             tokenization=LucaTokenization(self.context),
                             vectorization=LucaVectorization(self.context),
-                            clusterization=None)
+                            clusterization=LucaClustering(self.context))
         self.context['spark'] = SparkSession.builder.master("local[*]").appName("sample_app_inference").getOrCreate()
         self.context['path_list'] = path_list
         self.context['id_col'] = id_col
@@ -63,6 +64,7 @@ class LucaNLPAdapter(NLPAdapter):
             w2v_model = self.vectorization.load_model(w2v_path)
             vector_data = w2v_model.transform(tks_data)
 
+        vector_data = self.clusterization.data_preparation()
 
     def post_process(self):
         pass
