@@ -212,7 +212,6 @@ class Tokenization(ABC):
 
 
 class Clustering(ABC):
-
     def __init__(self, ctx):
         super(Clustering, self).__init__()
         self.ctx = ctx
