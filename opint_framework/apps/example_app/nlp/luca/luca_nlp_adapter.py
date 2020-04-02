@@ -11,7 +11,7 @@ class LucaNLPAdapter(NLPAdapter):
 
     def __init__(self, path_list, vo, id_col="msg_id", timestamp_tr_x="timestamp_tr_comp",  ## original data
                  tks_col="stop_token_1",  ## tokenization
-                 w2v_model_path=None, w2v_mode="load", emb_size=150, win_size=8, min_count=500,
+                 w2v_model_path=None, w2v_mode="load", w2v_save_mode="new", emb_size=150, win_size=8, min_count=500,
                  tks_vec="message_vector",  ## word2vec
                  ft_col="features", kmeans_model_path=None, kmeans_mode="train",
                  pred_mode="static", new_cluster_thresh=None, k_list=[12, 14, 16, 18, 20],  # update_model_path=None,
@@ -20,13 +20,19 @@ class LucaNLPAdapter(NLPAdapter):
                  tr_initSteps=200, tr_tol=0.000001, tr_maxIter=100,  ## train_kmeans
                  clust_col="prediction"  # visualization)
                  ):
+        # self.context = {}
+
+        super(LucaNLPAdapter, self).__init__(name="Luca&Mayank"#,
+                                             # tokenization=self.tokenization,
+                                             # vectorization=LucaVectorization(self.context, self.tokenization),
+                                             # clusterization=LucaClustering(self.context))
+                                             )
         self.tokenization = LucaTokenization(self.context)
-        NLPAdapter.__init__(self,
-                            tokenization=self.tokenization,
-                            vectorization=LucaVectorization(self.context, self.tokenization),
-                            clusterization=LucaClustering(self.context))
+        self.vectorization = LucaVectorization(self.context, self.tokenization)
+        self.clusterization = LucaClustering(self.context)
         self.context['spark'] = SparkSession.builder.master("local[*]").appName("sample_app_inference").getOrCreate()
         self.context['path_list'] = path_list
+        self.context['err_col'] = "t__error_message"
         self.context['id_col'] = id_col
         self.context['timestamp_tr_x'] = timestamp_tr_x
         self.context['vo'] = vo
@@ -36,6 +42,7 @@ class LucaNLPAdapter(NLPAdapter):
         self.context['ft_col'] = ft_col
         self.context['w2v_model_path'] = w2v_model_path
         self.context['w2v_mode'] = w2v_mode
+        self.context['w2v_save_mode'] = w2v_save_mode
         self.context['emb_size'] = emb_size
         self.context['win_size'] = win_size
         self.context['min_count'] = min_count
@@ -60,12 +67,12 @@ class LucaNLPAdapter(NLPAdapter):
             self.context['path_list'])  # WHY WE INTRODUCE NEW KEY? -> changed all_tranfers with dataset
 
         # retrieve just data
-        all_transfers = self.context['dataset'].select("data.*")
+        all_transfers = self.context['dataset']#.select("data.*")
 
         # filter test_errors only
-        test_errors = all_transfers.filter(all_transfers["t_final_transfer_state_flag"] == 0)
+        test_errors = all_transfers#.filter(all_transfers["t_final_transfer_state_flag"] == 0)
         if self.context['vo'] is not None:
-            test_errors = test_errors.filter(test_errors["vo"] == self.context['vo'])
+            test_errors = test_errors#.filter(test_errors["vo"] == self.context['vo'])
 
         # add row id and select only relevant variables
         test_errors = test_errors.withColumn(f"{self.context['id_col']}", F.monotonically_increasing_id()).select(
@@ -95,18 +102,20 @@ class LucaNLPAdapter(NLPAdapter):
         # w2v_path = "{}/w2v_models/data_window_{}/w2v_VS={}_MC={}_WS={}".format(base_w2v_path, data_window, emb_size, min_count, win_size)
 
         if self.context['w2v_mode'] == "train":
-            vector_data = self.vectorization.train_model(token_data, path_to_model=self.context['w2v_path'],
+            w2v_model = self.vectorization.train_model(token_data, path_to_model=self.context['w2v_model_path'],
                                                          tks_col=self.context['tks_col'],
                                                          id_col=self.context['id_col'], out_col=self.context['tks_vec'],
                                                          embedding_size=self.context['emb_size'],
                                                          window=self.context['win_size'],
                                                          min_count=self.context['min_count'],
-                                                         workers=self.context['n_cores'], mode="new")
-        elif self.context['w2v_mode'] == "load":
-            w2v_model = self.vectorization.load_model(self.context['w2v_path'])
+                                                         workers=self.context['n_cores'], mode=self.context["w2v_save_mode"])
             vector_data = w2v_model.transform(token_data)
 
-        vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
+        elif self.context['w2v_mode'] == "load":
+            w2v_model = self.vectorization.load_model(self.context['w2v_model_path'])
+            vector_data = w2v_model.transform(token_data)
+        # return(vector_data)
+        # vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
 
         # K value optimization
         res = self.clusterization.K_optim(k_list=self.context['k_list'], messages=vector_data,
@@ -114,7 +123,7 @@ class LucaNLPAdapter(NLPAdapter):
                                           ft_col=self.context['ft_col'], distance=self.context['distance'],
                                           initSteps=self.context['opt_initSteps'], tol=self.context['opt_tol'],
                                           maxIter=self.context['opt_maxIter'], n_cores=self.context['n_cores'],
-                                          log_path=self.context['log_path'])
+                                          log_path=self.context['log_path']+"K-Means_optimization.txt")
 
         k_sil = get_k_best(res, "silhouette")
 
@@ -137,11 +146,11 @@ class LucaNLPAdapter(NLPAdapter):
         vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
 
         # train best K
-        kmeans_model = self.clusterization.train_kmeans(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil,
+        kmeans_model = self.clusterization.train_model(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil,
                                                         distance=self.context['distance'],
                                                         initSteps=self.context['tr_initSteps'],
                                                         tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
-                                                        save_path=kmeans_model_path, mode=save_mode,
+                                                        path_to_model=kmeans_model_path, mode=save_mode,
                                                         log_path=best_k_log_path)
 
         return (kmeans_model)
@@ -156,28 +165,33 @@ class LucaNLPAdapter(NLPAdapter):
             model = model["model"]
             test_predictions = model.summary.predictions
             best_k = model.summary.k
-        if test_predictions:
+            print(best_k)
+            # return(test_predictions)
+        elif not test_predictions:
             # first we have to pre-preocess hdfs data to get clustering suitable format, i.e.:
             # 1. Tokenize
             # 2. Vectorize
             # 3. Clustering.data_preparation
+
+            print("I should not mess around here.")
             test_predictions = self.tokenization.tokenize_messages()
-            w2v_model = self.vectorization.load_model(self.context['w2v_path'])
+            w2v_model = self.vectorization.load_model(self.context['w2v_model_path'])
             test_predictions = w2v_model.transform(test_predictions)
             test_predictions = self.clusterization.data_preparation(test_predictions, self.context['tks_vec'])
             ## WARNING: IF WE WANT TO USE ONLY POST PROCESSING WE HAVE TO TAKE CARE OF INPUT PARAMETERS
 
-            test_predictions = self.clusterization.predict(test_predictions, model, pred_mode=self.context['pred_mode'],
+            test_predictions = self.clusterization.predict(tokenized=test_predictions, model=model, pred_mode=self.context['pred_mode'],
                                                            # new_cluster_thresh=None, update_model_path=kmeans_model_path--> need to be defined
                                                            )
-        abs_dataset, summary = summary(test_predictions, k=best_k,
+        abs_dataset, summary = summary(dataset=test_predictions, k=best_k,
                                        clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
                                        abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
                                        abstract=True, n_mess=5, wrdcld=False,
                                        original=self.context['dataset'], src_col="src_hostname", n_src=5,
                                        dst_col="dst_hostname", n_dst=5, timeplot=True,
                                        time_col=self.context['timestamp_tr_x'],
-                                       save_path="results/sample_app/K={}".format(best_k))
+                                       save_path="results/sample_app/K={}".format(best_k), tokenization=self.tokenization)
+        return (summary)
 
     def execute(self):
         pass

@@ -3,10 +3,13 @@ from opint_framework.apps.example_app.nlp.luca.kmeans import *
 
 class LucaClustering(Clustering):
 
+    def update_model(self, path_to_model, tokenized):
+        pass
+
     def __init__(self, ctx):
         super(LucaClustering, self).__init__(ctx)
 
-    def data_preparataion(self, messages, tks_vec):
+    def data_preparation(self, messages, tks_vec):
         """Take input dataset with Word2Vec representation in tks_vec column and properly format to feed into pyspark.ml.KMeans."""
         from pyspark.ml.feature import VectorAssembler
         vec_assembler = VectorAssembler(inputCols=[tks_vec], outputCol='features')
@@ -111,7 +114,7 @@ class LucaClustering(Clustering):
         from pathlib import Path
         from multiprocessing.pool import ThreadPool
 
-        messages = self.data_preparataion(messages, tks_vec) #kmeans_preproc(messages, tks_vec)
+        messages = self.data_preparation(messages, tks_vec) #kmeans_preproc(messages, tks_vec)
 
         if n_cores > 1:
             pool = ThreadPool(n_cores)

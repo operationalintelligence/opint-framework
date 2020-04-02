@@ -18,7 +18,7 @@ class PreProcessingError(Exception):
 class NLPAdapter(ABC):
     """ A wrapper class to interface various NLP log analysis algorithms """
 
-    def __init__(self, name, vectorization, tokenization, clusterization):
+    def __init__(self, name, vectorization=None, tokenization=None, clusterization=None):
         super(NLPAdapter, self).__init__()
         self.name = name
         self.vectorization = vectorization
@@ -215,7 +215,7 @@ class Clustering(ABC):
         self.ctx = ctx
 
     @abstractmethod
-    def data_preparataion(self, messages):
+    def data_preparation(self, messages):
         """
         Prepare data for clustering. Optional procedure. It can be used to convert input features to proper data formats (e.g. pyspark friendly)
 

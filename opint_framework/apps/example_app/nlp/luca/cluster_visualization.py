@@ -177,7 +177,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
             abs_tks_in="tokens_cleaned", abstract=True, n_mess=3, wrdcld=False,  # stats_summary
             original=None, n_src=3, n_dst=3, src_col=None, dst_col=None, data_id="msg_id", orig_id="msg_id",
             # patterns_summary
-            save_path=None, timeplot=False, time_col=None,
+            save_path=None, timeplot=False, time_col=None,  tokenization=None
             ):
     """Return summary statistics aggregated per cluster.
 
@@ -207,12 +207,12 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
     summary_df (pandas.DataFrame): merged data frame with stats_summary and patterns_summary
     """
     import pandas as pd
-    from abstraction_utils import abstract_params
+    # from opint_framework.apps.example_app.nlp.luca.tokenization import abstract_params
     from pathlib import Path
 
     # compute quantitative stats of the clusters
     if abstract:
-        dataset = abstract_params(dataset, tks_col=abs_tks_in, out_col=abs_tks_out)
+        dataset = tokenization.abstract_params(dataset, tks_col=abs_tks_in, out_col=abs_tks_out)
 
     if original:
         or_cols = original.columns
@@ -224,6 +224,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
         dataset = original.join(dataset, original[orig_id] == dataset[data_id],
                                 how="outer").select(out_cols)
         dataset = convert_endpoint_to_site(dataset, "src_hostname", "dst_hostname")
+
     if timeplot:
         plot_time(dataset, time_col=time_col, clust_col=clust_col, k=k, save_path="{}/timeplot".format(save_path))
     # first compute quantitative stats of the clusters
@@ -343,8 +344,9 @@ def convert_endpoint_to_site(dataset, src_col, dst_col):
     r = requests.get(url=cric_url).json()
     site_protocols = {}
     for site, info in r.items():
-        for se in info:
-            for name, prot in se.get('protocols', {}).items():
+        if "protocols" in info:
+            # print(se, type(se), info, type(info))
+            for name, prot in info.get('protocols', {}).items():
                 site_protocols.setdefault(get_hostname(prot['endpoint']), site)
 
     # apply mapping

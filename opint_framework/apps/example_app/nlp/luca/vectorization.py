@@ -30,6 +30,7 @@ class LucaVectorization(Vectorization):
         model (pyspark.ml.feature.Word2VecModel): trained Word2vec model
         """
         from pyspark.ml.feature import Word2Vec
+        from pathlib import Path
 
         # base_w2v_path = "results/sample_app/" # NOTE: this is a Hadoop path
         # data_window = "9-13mar2020"
@@ -46,7 +47,10 @@ class LucaVectorization(Vectorization):
         model = word2vec.fit(train_data)
 
         if path_to_model:
+            p = Path(path_to_model)
+            p.parent.mkdir(parents=True, exist_ok=True)
             outname = "{}/w2v_sample_app_example_VS={}_MC={}_WS={}".format(path_to_model, embedding_size, min_count, window)
+            self.ctx["w2v_model_path"] = outname
             if mode == "overwrite":
                 model.write().overwrite().save(outname)
             else:
