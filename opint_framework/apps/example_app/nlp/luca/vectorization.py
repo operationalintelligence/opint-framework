@@ -3,8 +3,9 @@ from opint_framework.core.nlp.nlp import Vectorization
 
 class LucaVectorization(Vectorization):
 
-    def __init__(self, ctx):
+    def __init__(self, ctx, tokenization):
         super(LucaVectorization, self).__init__(ctx)
+        self.tokenization = tokenization
 
     def train_model(self, messages, path_to_model=None, embedding_size=150, window=8, min_count=500, workers=12,
                     # training_algorithm=None, iter=None, # unused parent params
@@ -44,7 +45,7 @@ class LucaVectorization(Vectorization):
         train_data = messages.select(id_col, tks_col)
         model = word2vec.fit(train_data)
 
-        if save_path:
+        if path_to_model:
             outname = "{}/w2v_sample_app_example_VS={}_MC={}_WS={}".format(path_to_model, embedding_size, min_count, window)
             if mode == "overwrite":
                 model.write().overwrite().save(outname)
@@ -69,3 +70,21 @@ class LucaVectorization(Vectorization):
         vector_data = word2vec.transform(tokenized)
 
         return(vector_data)
+
+    def w2v_preproc(self, original_data, msg_col, id_col, model_path):
+        """Take input dataset as extracted from hdfs and compute Word2Vec representation.
+
+        -- params:
+        original_data (pyspark.sql.dataframe.DataFrame): data frame with at least error string and id columns
+        msg_col (string): name of the error string column
+        id_col (string): name of the message id column
+        model_path (string): path where to load pre-trained word2vec model
+
+        Returns:
+        original_data (pyspark.ml.feature.Word2VecModel): the original data with an extra
+                        "message_vector" column with word2vec embedding
+        """
+        original_data = self.tokenization.tokenize_messages(original_data, err_col=msg_col, id_col=id_col)
+        w2v_model = self.load_w2v(model_path)
+        original_data = w2v_model.transform(original_data)
+        return (original_data)

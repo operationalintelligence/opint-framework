@@ -9,18 +9,21 @@ import pyspark.sql.functions as F
 
 class LucaNLPAdapter(NLPAdapter):
 
-    def __init__(self, path_list, vo, id_col="msg_id", timestamp_tr_x="timestamp_tr_comp", tks_col="stop_token_1",
-                 w2v_model_path=None, w2v_mode="load", emb_size=150, win_size=8, min_count=500, ts_vec="message_vector", ## word2vec
+    def __init__(self, path_list, vo, id_col="msg_id", timestamp_tr_x="timestamp_tr_comp",  ## original data
+                 tks_col="stop_token_1",  ## tokenization
+                 w2v_model_path=None, w2v_mode="load", emb_size=150, win_size=8, min_count=500,
+                 tks_vec="message_vector",  ## word2vec
                  ft_col="features", kmeans_model_path=None, kmeans_mode="train",
                  pred_mode="static", new_cluster_thresh=None, k_list=[12, 14, 16, 18, 20],  # update_model_path=None,
-                 distance="cosine", opt_initSteps=10, opt_tol=0.0001, opt_maxIter=30, log_path=None, n_cores=5, ## K_optim
+                 distance="cosine", opt_initSteps=10, opt_tol=0.0001, opt_maxIter=30, log_path=None, n_cores=5,
+                 ## K_optim
                  tr_initSteps=200, tr_tol=0.000001, tr_maxIter=100,  ## train_kmeans
-                 clust_col="prediction" # visualization
-                 )
-        ):
+                 clust_col="prediction"  # visualization)
+                 ):
+        self.tokenization = LucaTokenization(self.context)
         NLPAdapter.__init__(self,
-                            tokenization=LucaTokenization(self.context),
-                            vectorization=LucaVectorization(self.context),
+                            tokenization=self.tokenization,
+                            vectorization=LucaVectorization(self.context, self.tokenization),
                             clusterization=LucaClustering(self.context))
         self.context['spark'] = SparkSession.builder.master("local[*]").appName("sample_app_inference").getOrCreate()
         self.context['path_list'] = path_list
@@ -32,10 +35,14 @@ class LucaNLPAdapter(NLPAdapter):
         self.context['tks_vec'] = tks_vec
         self.context['ft_col'] = ft_col
         self.context['w2v_model_path'] = w2v_model_path
+        self.context['w2v_mode'] = w2v_mode
+        self.context['emb_size'] = emb_size
+        self.context['win_size'] = win_size
+        self.context['min_count'] = min_count
         self.context['kmeans_model_path'] = kmeans_model_path
         self.context['pred_mode'] = pred_mode
         self.context['kmeans_mode'] = kmeans_mode
-        self.context['new_cluster_threshold'] = new_cluster_threshold
+        self.context['new_cluster_threshold'] = new_cluster_thresh
         self.context['k_list'] = k_list
         self.context['distance'] = distance
         self.context['opt_initSteps'] = opt_initSteps
@@ -48,9 +55,9 @@ class LucaNLPAdapter(NLPAdapter):
         self.context['n_cores'] = n_cores
         self.context['clust_col'] = clust_col
 
-
-def pre_process(self):
-        self.context['dataset'] = spark.read.json(self.context['path_list']) # WHY WE INTRODUCE NEW KEY? -> changed all_tranfers with dataset
+    def pre_process(self):
+        self.context['dataset'] = spark.read.json(
+            self.context['path_list'])  # WHY WE INTRODUCE NEW KEY? -> changed all_tranfers with dataset
 
         # retrieve just data
         all_transfers = self.context['dataset'].select("data.*")
@@ -68,6 +75,9 @@ def pre_process(self):
         self.context['dataset'] = test_errors
 
     def run(self):
+        from opint_framework.apps.example_app.nlp.luca.kmeans import get_k_best
+        from pathlib import Path
+
         # LUCA: consider the following:
         # 1) add base_w2v_path and data_window as arguments;
         # 2) add w2v hyperparams as arguments;
@@ -84,19 +94,23 @@ def pre_process(self):
         # win_size = 8
         # w2v_path = "{}/w2v_models/data_window_{}/w2v_VS={}_MC={}_WS={}".format(base_w2v_path, data_window, emb_size, min_count, win_size)
 
-        if w2v_mode=="train":
-            vector_data = self.vectorization.train_model(token_data, path_to_model=self.context['w2v_path'], tks_col=self.context['tks_col'],
+        if self.context['w2v_mode'] == "train":
+            vector_data = self.vectorization.train_model(token_data, path_to_model=self.context['w2v_path'],
+                                                         tks_col=self.context['tks_col'],
                                                          id_col=self.context['id_col'], out_col=self.context['tks_vec'],
-                                                         embedding_size=self.context['emb_size'], window=self.context['win_size'],
-                                                         min_count=self.context['min_count'], workers=self.context['n_cores'], mode="new")
-        elif w2v_mode=="load":
+                                                         embedding_size=self.context['emb_size'],
+                                                         window=self.context['win_size'],
+                                                         min_count=self.context['min_count'],
+                                                         workers=self.context['n_cores'], mode="new")
+        elif self.context['w2v_mode'] == "load":
             w2v_model = self.vectorization.load_model(self.context['w2v_path'])
-            vector_data = w2v_model.transform(tks_data)
+            vector_data = w2v_model.transform(token_data)
 
         vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
 
         # K value optimization
-        res = self.clusterization.K_optim(k_list=self.context['k_list'], messages=vector_data, tks_vec=self.context['tks_vec'],
+        res = self.clusterization.K_optim(k_list=self.context['k_list'], messages=vector_data,
+                                          tks_vec=self.context['tks_vec'],
                                           ft_col=self.context['ft_col'], distance=self.context['distance'],
                                           initSteps=self.context['opt_initSteps'], tol=self.context['opt_tol'],
                                           maxIter=self.context['opt_maxIter'], n_cores=self.context['n_cores'],
@@ -108,11 +122,11 @@ def pre_process(self):
         if self.context['pred_mode'] == "update":
             save_mode = "overwrite"
             kmeans_model_path = "temp_ciccio"
-    #         elif kmeans_mode=="load":
-    #             kmeans_model_path = None
-    #             save_mode = "new"
-    #         else:
-    #             save_mode = "new"
+        #         elif kmeans_mode=="load":
+        #             kmeans_model_path = None
+        #             save_mode = "new"
+        #         else:
+        #             save_mode = "new"
         else:
             kmeans_model_path = None
             save_mode = "new"
@@ -123,9 +137,12 @@ def pre_process(self):
         vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
 
         # train best K
-        kmeans_model = self.clusterization.train_kmeans(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil, distance=self.context['distance'],
-                                    initSteps=self.context['tr_initSteps'], tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
-                                    save_path=kmeans_model_path, mode=save_mode, log_path=best_k_log_path)
+        kmeans_model = self.clusterization.train_kmeans(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil,
+                                                        distance=self.context['distance'],
+                                                        initSteps=self.context['tr_initSteps'],
+                                                        tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
+                                                        save_path=kmeans_model_path, mode=save_mode,
+                                                        log_path=best_k_log_path)
 
         return (kmeans_model)
 
@@ -133,9 +150,9 @@ def pre_process(self):
         from opint_framework.apps.example_app.nlp.luca.cluster_visualization import summary
 
         # initialize to None in case not retrievable from the model
-        best_k=None
+        best_k = None
 
-        if type(model)==type({}) :
+        if type(model) == type({}):
             model = model["model"]
             test_predictions = model.summary.predictions
             best_k = model.summary.k
@@ -153,11 +170,14 @@ def pre_process(self):
             test_predictions = self.clusterization.predict(test_predictions, model, pred_mode=self.context['pred_mode'],
                                                            # new_cluster_thresh=None, update_model_path=kmeans_model_path--> need to be defined
                                                            )
-        abs_dataset, summary = cluster_visualization.summary(test_predictions, k=best_k,
-                                                             clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
-                                                             abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
-                                                             abstract=True, n_mess=5, wrdcld=False,
-                                                             original=self.context['dataset'], src_col="src_hostname", n_src=5,
-                                                             dst_col="dst_hostname", n_dst=5, timeplot=True,
-                                                             time_col=self.context['timestamp_tr_x'],
-                                                             save_path="results/sample_app/K={}".format(best_k))
+        abs_dataset, summary = summary(test_predictions, k=best_k,
+                                       clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
+                                       abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
+                                       abstract=True, n_mess=5, wrdcld=False,
+                                       original=self.context['dataset'], src_col="src_hostname", n_src=5,
+                                       dst_col="dst_hostname", n_dst=5, timeplot=True,
+                                       time_col=self.context['timestamp_tr_x'],
+                                       save_path="results/sample_app/K={}".format(best_k))
+
+    def execute(self):
+        pass

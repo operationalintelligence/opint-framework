@@ -132,7 +132,7 @@ class LucaClustering(Clustering):
                 print("Training for K={}".format(k))
                 print("Started at: {}\n".format(start_time_string))
 
-                model_k = train_kmeans(messages, ft_col=ft_col, k=k, distance="cosine",
+                model_k = self.clusterization.train_kmeans(messages, ft_col=ft_col, k=k, distance="cosine",
                                        initSteps=initSteps, tol=tol, maxIter=maxIter, log_path=log_path)
 
                 print("\nTime elapsed: {} minutes and {} seconds.".format(int((time.time() - start_time) / 60),

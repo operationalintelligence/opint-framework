@@ -1,4 +1,4 @@
-def compute_metrics(model_list, index, metric, distance):
+def compute_metrics(model_list, i, metric, distance):
     from pyspark.ml.evaluation import ClusteringEvaluator
 
     # Evaluate clustering by computing Silhouette score

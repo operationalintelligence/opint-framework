@@ -1,5 +1,5 @@
 from opint_framework.core.nlp.nlp import Tokenization
-from text_parsing_utils import split_urls, clean_tokens
+from opint_framework.apps.example_app.nlp.luca.text_parsing_utils import split_urls, clean_tokens
 
 
 class LucaTokenization(Tokenization):
@@ -42,7 +42,7 @@ class LucaTokenization(Tokenization):
 
         # split text into tokens
         tokenizer = Tokenizer(inputCol="corrected_message", outputCol="tokens")
-        vector_data = tokenizer.transform(test_data)
+        token_data = tokenizer.transform(test_data)
 
         # transform in user defined function
         clean_tokens_udf = udf(lambda entry: clean_tokens(entry, custom_split=True), ArrayType(StringType()))
@@ -107,7 +107,7 @@ class LucaTokenization(Tokenization):
         """
         from pyspark.sql.functions import udf
         from pyspark.sql.types import StringType, ArrayType
-        from abstraction_utils import abstract_message
+        from opint_framework.apps.example_app.nlp.luca.abstraction_utils import abstract_message
         # transform in user defined function
         abstract_message_udf = udf(abstract_message, ArrayType(StringType()))
 
