@@ -1,0 +1,6 @@
+pyspark
+jupyter
+ipython
+matplotlib
+numpy
+wordcloud
