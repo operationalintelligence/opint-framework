@@ -15,6 +15,7 @@ class LucaNLPAdapter(NLPAdapter):
                  pred_mode="static", new_cluster_thresh=None, k_list=[12, 14, 16, 18, 20],  # update_model_path=None,
                  distance="cosine", opt_initSteps=10, opt_tol=0.0001, opt_maxIter=30, log_path=None, n_cores=5, ## K_optim
                  tr_initSteps=200, tr_tol=0.000001, tr_maxIter=100,  ## train_kmeans
+                 clust_col="prediction" # visualization
                  )
         ):
         NLPAdapter.__init__(self,
@@ -45,6 +46,7 @@ class LucaNLPAdapter(NLPAdapter):
         self.context['tr_maxIter'] = tr_maxIter
         self.context['log_path'] = log_path
         self.context['n_cores'] = n_cores
+        self.context['clust_col'] = clust_col
 
 
 def pre_process(self):
@@ -93,7 +95,7 @@ def pre_process(self):
 
         vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
 
-        # train for different Ks
+        # K value optimization
         res = self.clusterization.K_optim(k_list=self.context['k_list'], messages=vector_data, tks_vec=self.context['tks_vec'],
                                           ft_col=self.context['ft_col'], distance=self.context['distance'],
                                           initSteps=self.context['opt_initSteps'], tol=self.context['opt_tol'],
@@ -102,6 +104,7 @@ def pre_process(self):
 
         k_sil = get_k_best(res, "silhouette")
 
+        # setup prediciton mode params
         if self.context['pred_mode'] == "update":
             save_mode = "overwrite"
             kmeans_model_path = "temp_ciccio"
@@ -115,10 +118,46 @@ def pre_process(self):
             save_mode = "new"
 
         best_k_log_path = Path(self.context['log_path']).parent / "best_K={}.txt".format(k_sil)
-        vector_data = self.clusterization.data_preparation(vector_data, self.context'tks_vec')
-        kmeans_model = train_kmeans(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil, distance=self.context['distance'],
+
+        # transform data into clustering suitable format
+        vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
+
+        # train best K
+        kmeans_model = self.clusterization.train_kmeans(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil, distance=self.context['distance'],
                                     initSteps=self.context['tr_initSteps'], tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
                                     save_path=kmeans_model_path, mode=save_mode, log_path=best_k_log_path)
 
         return (kmeans_model)
 
+    def post_process(self, model, test_predictions=None):
+        from opint_framework.apps.example_app.nlp.luca.cluster_visualization import summary
+
+        # initialize to None in case not retrievable from the model
+        best_k=None
+
+        if type(model)==type({}) :
+            model = model["model"]
+            test_predictions = model.summary.predictions
+            best_k = model.summary.k
+        if test_predictions:
+            # first we have to pre-preocess hdfs data to get clustering suitable format, i.e.:
+            # 1. Tokenize
+            # 2. Vectorize
+            # 3. Clustering.data_preparation
+            test_predictions = self.tokenization.tokenize_messages()
+            w2v_model = self.vectorization.load_model(self.context['w2v_path'])
+            test_predictions = w2v_model.transform(test_predictions)
+            test_predictions = self.clusterization.data_preparation(test_predictions, self.context['tks_vec'])
+            ## WARNING: IF WE WANT TO USE ONLY POST PROCESSING WE HAVE TO TAKE CARE OF INPUT PARAMETERS
+
+            test_predictions = self.clusterization.predict(test_predictions, model, pred_mode=self.context['pred_mode'],
+                                                           # new_cluster_thresh=None, update_model_path=kmeans_model_path--> need to be defined
+                                                           )
+        abs_dataset, summary = cluster_visualization.summary(test_predictions, k=best_k,
+                                                             clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
+                                                             abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
+                                                             abstract=True, n_mess=5, wrdcld=False,
+                                                             original=self.context['dataset'], src_col="src_hostname", n_src=5,
+                                                             dst_col="dst_hostname", n_dst=5, timeplot=True,
+                                                             time_col=self.context['timestamp_tr_x'],
+                                                             save_path="results/sample_app/K={}".format(best_k))

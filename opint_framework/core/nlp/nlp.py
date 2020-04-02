@@ -264,7 +264,7 @@ class Clustering(ABC):
         """
         Apply the pre-trained algorithm in model and output the clusters discovered in the tokenized data.
         :param model: clustering model
-        :param tokenized: tokenized log messages
+        :param tokenized: tokenized log messages in suitable format for the clustering algorithm
         :return data with cluster label prediction according to the clustering model
         """
         raise NotImplementedError
