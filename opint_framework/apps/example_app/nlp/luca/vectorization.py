@@ -30,6 +30,13 @@ class LucaVectorization(Vectorization):
         """
         from pyspark.ml.feature import Word2Vec
 
+        # base_w2v_path = "results/sample_app/" # NOTE: this is a Hadoop path
+        # data_window = "9-13mar2020"
+        # emb_size = self.ctx['emb_size']
+        # min_count = self.ctx['min_count']
+        # win_size = self.ctx['win_size']
+        # path_to_model = "{}/w2v_VS={}_MC={}_WS={}".format(self.ctx['w2v_path'], emb_size, min_count, win_size)
+
         # intialise word2vec
         word2vec = Word2Vec(vectorSize=embedding_size, minCount=min_count, windowSize=window,
                             inputCol=tks_col, outputCol=out_col, numPartitions=workers)

@@ -185,11 +185,6 @@ def kmeans_inference(original_data, msg_col, id_col, w2v_model_path, tks_vec, ft
                      # K_optim
                      tr_initSteps=200, tr_tol=0.000001, tr_maxIter=100,  # train_kmeans
                      ):
-    from language_models import w2v_preproc
-    from pyspark.ml.clustering import KMeansModel
-    import time
-    import datetime
-    from pyspark.ml.evaluation import ClusteringEvaluator
     """Perform inference on new error messages (Note: only K-Means can be re-trained/updated).
 
     -- params:
@@ -218,6 +213,11 @@ def kmeans_inference(original_data, msg_col, id_col, w2v_model_path, tks_vec, ft
     Returns:
     original_data (pyspark.sql.dataframe.DataFrame): the input data frame with an extra \"prediction\" column
     """
+    from language_models import w2v_preproc
+    from pyspark.ml.clustering import KMeansModel
+    import time
+    import datetime
+    from pyspark.ml.evaluation import ClusteringEvaluator
     from pathlib import Path
 
     if kmeans_mode not in ["load", "train"]:

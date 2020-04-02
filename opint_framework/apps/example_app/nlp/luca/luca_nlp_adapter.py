@@ -10,10 +10,11 @@ import pyspark.sql.functions as F
 class LucaNLPAdapter(NLPAdapter):
 
     def __init__(self, path_list, vo, id_col="msg_id", timestamp_tr_x="timestamp_tr_comp", tks_col="stop_token_1",
-                 w2v_model_path=None, ft_col="features", kmeans_model_path=None, kmeans_mode="train",
+                 w2v_model_path=None, w2v_mode="load", emb_size=150, win_size=8, min_count=500, ts_vec="message_vector", ## word2vec
+                 ft_col="features", kmeans_model_path=None, kmeans_mode="train",
                  pred_mode="static", new_cluster_thresh=None, k_list=[12, 14, 16, 18, 20],  # update_model_path=None,
-                 distance="cosine", opt_initSteps=10, opt_tol=0.0001, opt_maxIter=30, log_path=None, n_cores=5, # K_optim
-                 tr_initSteps=200, tr_tol=0.000001, tr_maxIter=100,  # train_kmeans
+                 distance="cosine", opt_initSteps=10, opt_tol=0.0001, opt_maxIter=30, log_path=None, n_cores=5, ## K_optim
+                 tr_initSteps=200, tr_tol=0.000001, tr_maxIter=100,  ## train_kmeans
                  )
         ):
         NLPAdapter.__init__(self,
@@ -27,6 +28,7 @@ class LucaNLPAdapter(NLPAdapter):
         self.context['vo'] = vo
         self.context['dataset'] = None
         self.context['tks_col'] = tks_col
+        self.context['tks_vec'] = tks_vec
         self.context['ft_col'] = ft_col
         self.context['w2v_model_path'] = w2v_model_path
         self.context['kmeans_model_path'] = kmeans_model_path
@@ -46,10 +48,10 @@ class LucaNLPAdapter(NLPAdapter):
 
 
 def pre_process(self):
-        self.context['all_transfers'] = spark.read.json(self.context['path_list']) # WHY WE INTRODUCE NEW KEY?
+        self.context['dataset'] = spark.read.json(self.context['path_list']) # WHY WE INTRODUCE NEW KEY? -> changed all_tranfers with dataset
 
         # retrieve just data
-        all_transfers = self.context['all_transfers'].select("data.*")
+        all_transfers = self.context['dataset'].select("data.*")
 
         # filter test_errors only
         test_errors = all_transfers.filter(all_transfers["t_final_transfer_state_flag"] == 0)
@@ -73,32 +75,34 @@ def pre_process(self):
         token_data = self.tokenization.tokenize_messages()
 
         # setup w2v model paths
-        base_w2v_path = "results/sample_app/" # NOTE: this is a Hadoop path
-        data_window = "9-13mar2020"
-        emb_size = 150
-        min_count = 500
-        win_size = 8
-        w2v_path = "{}/w2v_models/data_window_{}/w2v_VS={}_MC={}_WS={}".format(base_w2v_path, data_window, emb_size, min_count, win_size)
+        # base_w2v_path = "results/sample_app/" # NOTE: this is a Hadoop path
+        # data_window = "9-13mar2020"
+        # emb_size = 150
+        # min_count = 500
+        # win_size = 8
+        # w2v_path = "{}/w2v_models/data_window_{}/w2v_VS={}_MC={}_WS={}".format(base_w2v_path, data_window, emb_size, min_count, win_size)
 
-        if False: # substitute with: w2v_mode=="train":
-            vector_data = self.vectorization.train_model(token_data, path_to_model=w2v_path, tks_col="stop_token_1",
-                                                         id_col=id_col, out_col='message_vector', embedding_size=emb_size,
-                                                         window=win_size, min_count=min_count, workers=12, mode="new")
-        elif True: # substitute with: w2v_mode=="load":
-            w2v_model = self.vectorization.load_model(w2v_path)
+        if w2v_mode=="train":
+            vector_data = self.vectorization.train_model(token_data, path_to_model=self.context['w2v_path'], tks_col=self.context['tks_col'],
+                                                         id_col=self.context['id_col'], out_col=self.context['tks_vec'],
+                                                         embedding_size=self.context['emb_size'], window=self.context['win_size'],
+                                                         min_count=self.context['min_count'], workers=self.context['n_cores'], mode="new")
+        elif w2v_mode=="load":
+            w2v_model = self.vectorization.load_model(self.context['w2v_path'])
             vector_data = w2v_model.transform(tks_data)
 
-        vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_col'])
+        vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
 
         # train for different Ks
-        res = self.clusterization.K_optim(self.context['k_list'], dataset=vector_data, tks_vec=self.context['tks_col'],
+        res = self.clusterization.K_optim(k_list=self.context['k_list'], messages=vector_data, tks_vec=self.context['tks_vec'],
                                           ft_col=self.context['ft_col'], distance=self.context['distance'],
                                           initSteps=self.context['opt_initSteps'], tol=self.context['opt_tol'],
-                                          maxIter=self.context['opt_maxIter'], n_cores=self.context['n_cores'], log_path=log_path)
+                                          maxIter=self.context['opt_maxIter'], n_cores=self.context['n_cores'],
+                                          log_path=self.context['log_path'])
 
         k_sil = get_k_best(res, "silhouette")
 
-        if pred_mode == "update":
+        if self.context['pred_mode'] == "update":
             save_mode = "overwrite"
             kmeans_model_path = "temp_ciccio"
     #         elif kmeans_mode=="load":
@@ -110,13 +114,11 @@ def pre_process(self):
             kmeans_model_path = None
             save_mode = "new"
 
-        best_k_log_path = Path(log_path).parent / "best_K={}.txt".format(k_sil)
-        original_data = kmeans_preproc(original_data, tks_vec)
-        kmeans_model = train_kmeans(original_data, ft_col=ft_col, k=k_sil, distance=distance,
-                                    initSteps=tr_initSteps, tol=tr_tol, maxIter=tr_maxIter,
+        best_k_log_path = Path(self.context['log_path']).parent / "best_K={}.txt".format(k_sil)
+        vector_data = self.clusterization.data_preparation(vector_data, self.context'tks_vec')
+        kmeans_model = train_kmeans(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil, distance=self.context['distance'],
+                                    initSteps=self.context['tr_initSteps'], tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
                                     save_path=kmeans_model_path, mode=save_mode, log_path=best_k_log_path)
 
-    original_data = kmeans_predict(original_data, kmeans_model["model"], pred_mode=pred_mode,
-                                   new_cluster_thresh=None, update_model_path=kmeans_model_path)
-    def post_process(self):
-        pass
+        return (kmeans_model)
+

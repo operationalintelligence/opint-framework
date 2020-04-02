@@ -25,6 +25,7 @@ class LucaTokenization(Tokenization):
         """
         err_col = self.ctx['err_col']
         id_col = self.ctx['id_col']
+        tks_col = self.ctx['tks_col']
         dataset = self.ctx['dataset']
 
         import pyspark.sql.functions as F
@@ -51,7 +52,7 @@ class LucaTokenization(Tokenization):
 
         # remove stop (common, non-relevant) words
         stop_remove = StopWordsRemover(inputCol="tokens_cleaned", outputCol="stop_token")
-        stop_remove1 = StopWordsRemover(inputCol="stop_token", outputCol="stop_token_1", stopWords=["", ":", "-", "+"])
+        stop_remove1 = StopWordsRemover(inputCol="stop_token", outputCol=tks_col, stopWords=["", ":", "-", "+"])
 
         data_prep_pipeline = Pipeline(stages=[stop_remove, stop_remove1])
 
@@ -62,7 +63,7 @@ class LucaTokenization(Tokenization):
 
     def detokenize_messages(self, tokenized, tks_col):
         """Takes pyspark dataframe \"tokenized\" where \"err_col\" contains list of tokens
-        and return a dataframe with the additional \"message_string\" column where tkens are joint back.
+        and return a dataframe with the additional \"message_string\" column where tokens are joint back.
         """
         # err_col = self.ctx['err_col']
         # id_col = self.ctx['id_col']
