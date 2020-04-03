@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # General activation flag
-IS_ACTIVATED = True
+IS_ACTIVATED = False
 
 # The time period in sec when each agent is called. It is delay between starting time
 # Only once instance of each agent could be executed at the same time
@@ -24,7 +24,7 @@ DB_JOBS_PASS = ''
 DB_PERS_USER = ''
 DB_PERS_PASS = ''
 
-exec(open(str(Path.home())+"/private/db_settings.py").read())
+# exec(open(str(Path.home())+"/private/db_settings.py").read())
 
 DATABASES = {
     'default': {},
