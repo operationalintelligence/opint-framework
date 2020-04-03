@@ -182,7 +182,7 @@ class LucaNLPAdapter(NLPAdapter):
         abs_dataset, summary = summary(dataset=test_predictions, k=best_k,
                                        clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
                                        abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
-                                       abstract=True, n_mess=5, wrdcld=False,
+                                       abstract=True, n_mess=5, wrdcld=True,
                                        original=self.context['dataset'], src_col="src_hostname", n_src=5,
                                        dst_col="dst_hostname", n_dst=5, timeplot=True,
                                        time_col=self.context['timestamp_tr_x'],
@@ -190,4 +190,24 @@ class LucaNLPAdapter(NLPAdapter):
         return (summary)
 
     def execute(self):
-        pass
+        try:
+            print(f"NLP Adapter - {self.name}: Pre Processing input data")
+            self.pre_process()
+        except Exception as error:
+            print(f"NLP Adapter - {self.name}: Pre Processing failed: {str(error)}")
+            traceback.print_exc()
+        try:
+            print(f"NLP Adapter - {self.name}: Executing vectorization, tokenization and clusterization")
+            model = self.run()
+        except Exception as error:
+            print(f"NLP Adapter - {self.name}: Log analysis failed: {str(error)}")
+            traceback.print_exc()
+        try:
+            print(f"NLP Adapter - {self.name}: Post processing")
+            summary = self.post_process(model=model)
+            return(summary)
+        except Exception as error:
+            print(f"NLP Adapter - {self.name}: Post Processing failed: {str(error)}")
+            traceback.print_exc()
+
+

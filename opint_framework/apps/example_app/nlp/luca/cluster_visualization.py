@@ -286,8 +286,11 @@ def tokens_cloud(dataset, msg_col, clust_col="prediction", save_path=None,
     import matplotlib
     import pyspark.sql.functions as F
     from matplotlib import pyplot as plt
-    from abstraction_utils import abstract_params
+    # from opint_framework.apps.example_app.nlp.luca.tokenization import abstract_params
     from pathlib import Path
+
+    if save_path:
+        print("Saving time plots to: {}".format(save_path))
 
     for clust_id in dataset.select(clust_col).distinct().collect():
         cluster_messages = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select(msg_col).collect()
@@ -311,7 +314,7 @@ def tokens_cloud(dataset, msg_col, clust_col="prediction", save_path=None,
             save_path = Path(save_path)
             save_path.mkdir(parents=True, exist_ok=True)
             outname = save_path / "cluster_{}.png".format(clust_id[clust_col])
-            print("Saving token clouds to: {}".format(outname))
+            # print("Saving token clouds to: {}".format(outname))
             if os.path.isfile(outname):
                 os.remove(outname)
             fig.savefig(outname, format='png', bbox_inches='tight')
@@ -390,6 +393,9 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
     else:
         clust_ids = dataset.select(clust_col).distinct().collect()
 
+    if save_path:
+        print("Saving time plots to: {}".format(save_path))
+
     for clust_id in clust_ids:
         cluster = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select("datetime")
         #         cluster = cluster.groupBy("datetime").agg(F.count("datetime").alias("freq")).orderBy("datetime", ascending=True)
@@ -423,7 +429,7 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
             save_path = Path(save_path)
             save_path.mkdir(parents=True, exist_ok=True)
             outname = save_path / "cluster_{}.png".format(clust_id[clust_col])
-            print("Saving time plots to: {}".format(outname))
+            # print("Saving time plots to: {}".format(outname))
             if os.path.isfile(outname):
                 os.remove(outname)
             fig.savefig(outname, format='png', bbox_inches='tight')
