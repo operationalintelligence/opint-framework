@@ -123,7 +123,7 @@ class LucaNLPAdapter(NLPAdapter):
                                           ft_col=self.context['ft_col'], distance=self.context['distance'],
                                           initSteps=self.context['opt_initSteps'], tol=self.context['opt_tol'],
                                           maxIter=self.context['opt_maxIter'], n_cores=self.context['n_cores'],
-                                          log_path=self.context['log_path']+"K-Means_optimization.txt")
+                                          log_path="{}/K-Means_optimization.txt".format(self.context['log_path']))
 
         k_sil = get_k_best(res, "silhouette")
 
@@ -165,15 +165,11 @@ class LucaNLPAdapter(NLPAdapter):
             model = model["model"]
             test_predictions = model.summary.predictions
             best_k = model.summary.k
-            print(best_k)
-            # return(test_predictions)
         elif not test_predictions:
             # first we have to pre-preocess hdfs data to get clustering suitable format, i.e.:
             # 1. Tokenize
             # 2. Vectorize
             # 3. Clustering.data_preparation
-
-            print("I should not mess around here.")
             test_predictions = self.tokenization.tokenize_messages()
             w2v_model = self.vectorization.load_model(self.context['w2v_model_path'])
             test_predictions = w2v_model.transform(test_predictions)
