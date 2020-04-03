@@ -1,6 +1,12 @@
-pyspark
+# Jupyter Notebook
 jupyter
 ipython
+autopep8
+
+# Analysis
+pyspark
+
+# Visualization
 matplotlib
 numpy
 wordcloud
