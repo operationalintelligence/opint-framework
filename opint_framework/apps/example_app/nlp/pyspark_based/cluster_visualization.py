@@ -207,9 +207,9 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
     summary_df (pandas.DataFrame): merged data frame with stats_summary and patterns_summary
     """
     import pandas as pd
-    # from opint_framework.apps.example_app.nlp.luca.tokenization import abstract_params
+    # from opint_framework.apps.example_app.nlp.pyspark_based.tokenization import abstract_params
     from pathlib import Path
-
+    pd.options.mode.chained_assignment = 'raise'
     # compute quantitative stats of the clusters
     if abstract:
         dataset = tokenization.abstract_params(dataset, tks_col=abs_tks_in, out_col=abs_tks_out)
@@ -242,14 +242,11 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
 
     # Add percentage stat in top patterns/src/dst columns
     for idx in summary_df.index:
-        tot_clust = summary_df.loc[idx].n_messages
+        tot_clust = summary_df.loc[idx, "n_messages"]
         cols = [col for col in summary_df.columns if "top" in col]
         for col in cols:
-            output = []
-            for top_enties in summary_df[col].loc[idx]:
-                top_enties["n_perc"] = round(top_enties["n"] / tot_clust, 4)
-                output.append(top_enties)
-            summary_df[col].loc[idx] = output
+            for top_entries in summary_df.loc[idx, col]:
+                top_entries["n_perc"] = round(top_entries["n"] / tot_clust, 4)
 
     if save_path:
         save_path = Path(save_path)
@@ -286,7 +283,7 @@ def tokens_cloud(dataset, msg_col, clust_col="prediction", save_path=None,
     import matplotlib
     import pyspark.sql.functions as F
     from matplotlib import pyplot as plt
-    # from opint_framework.apps.example_app.nlp.luca.tokenization import abstract_params
+    # from opint_framework.apps.example_app.nlp.pyspark_based.tokenization import abstract_params
     from pathlib import Path
 
     if save_path:

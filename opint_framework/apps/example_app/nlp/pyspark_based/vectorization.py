@@ -1,10 +1,10 @@
 from opint_framework.core.nlp.nlp import Vectorization
 
 
-class LucaVectorization(Vectorization):
+class pyspark_w2v_Vectorization(Vectorization):
 
     def __init__(self, ctx, tokenization):
-        super(LucaVectorization, self).__init__(ctx)
+        super(pyspark_w2v_Vectorization, self).__init__(ctx)
         self.tokenization = tokenization
 
     def train_model(self, messages, path_to_model=None, embedding_size=150, window=8, min_count=500, workers=12,

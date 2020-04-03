@@ -1,13 +1,13 @@
 from pyspark.shell import spark
 from pyspark.sql import SparkSession
-from opint_framework.apps.example_app.nlp.luca.tokenization import LucaTokenization
-from opint_framework.apps.example_app.nlp.luca.vectorization import LucaVectorization
-from opint_framework.apps.example_app.nlp.luca.clustering import LucaClustering
+from opint_framework.apps.example_app.nlp.pyspark_based.tokenization import pysparkTokenization
+from opint_framework.apps.example_app.nlp.pyspark_based.vectorization import pyspark_w2v_Vectorization
+from opint_framework.apps.example_app.nlp.pyspark_based.clustering import pyspark_KM_Clustering
 from opint_framework.core.nlp.nlp import NLPAdapter
 import pyspark.sql.functions as F
 
 
-class LucaNLPAdapter(NLPAdapter):
+class pysparkNLPAdapter(NLPAdapter):
 
     def __init__(self, path_list, vo, id_col="msg_id", timestamp_tr_x="timestamp_tr_comp",  ## original data
                  tks_col="stop_token_1",  ## tokenization
@@ -22,14 +22,14 @@ class LucaNLPAdapter(NLPAdapter):
                  ):
         # self.context = {}
 
-        super(LucaNLPAdapter, self).__init__(name="PySpark_adapter"#,
-                                             # tokenization=self.tokenization,
-                                             # vectorization=LucaVectorization(self.context, self.tokenization),
-                                             # clusterization=LucaClustering(self.context))
-                                             )
-        self.tokenization = LucaTokenization(self.context)
-        self.vectorization = LucaVectorization(self.context, self.tokenization)
-        self.clusterization = LucaClustering(self.context)
+        super(pysparkNLPAdapter, self).__init__(name="PySpark_adapter"  #,
+                                                # tokenization=self.tokenization,
+                                                # vectorization=pyspark_w2v_Vectorization(self.context, self.tokenization),
+                                                # clusterization=pyspark_KM_Clustering(self.context))
+                                                )
+        self.tokenization = pysparkTokenization(self.context)
+        self.vectorization = pyspark_w2v_Vectorization(self.context, self.tokenization)
+        self.clusterization = pyspark_KM_Clustering(self.context)
         self.context['spark'] = SparkSession.builder.master("local[*]").appName("sample_app_inference").getOrCreate()
         self.context['path_list'] = path_list
         self.context['err_col'] = "t__error_message"
@@ -82,24 +82,10 @@ class LucaNLPAdapter(NLPAdapter):
         self.context['dataset'] = test_errors
 
     def run(self):
-        from opint_framework.apps.example_app.nlp.luca.kmeans import get_k_best
+        from opint_framework.apps.example_app.nlp.pyspark_based.kmeans import get_k_best
         from pathlib import Path
 
-        # LUCA: consider the following:
-        # 1) add base_w2v_path and data_window as arguments;
-        # 2) add w2v hyperparams as arguments;
-        # 3) add w2v_mode argument ("train" or "load") for training/inference modes
-        # 4) add kmeans_mode argument ("train" or "load", currently just "train" available)
-
         token_data = self.tokenization.tokenize_messages()
-
-        # setup w2v model paths
-        # base_w2v_path = "results/sample_app/" # NOTE: this is a Hadoop path
-        # data_window = "9-13mar2020"
-        # emb_size = 150
-        # min_count = 500
-        # win_size = 8
-        # w2v_path = "{}/w2v_models/data_window_{}/w2v_VS={}_MC={}_WS={}".format(base_w2v_path, data_window, emb_size, min_count, win_size)
 
         if self.context['w2v_mode'] == "train":
             w2v_model = self.vectorization.train_model(token_data, path_to_model=self.context['w2v_model_path'],
@@ -156,7 +142,7 @@ class LucaNLPAdapter(NLPAdapter):
         return (kmeans_model)
 
     def post_process(self, model, test_predictions=None):
-        from opint_framework.apps.example_app.nlp.luca.cluster_visualization import summary
+        from opint_framework.apps.example_app.nlp.pyspark_based.cluster_visualization import summary
 
         # initialize to None in case not retrievable from the model
         best_k = None
@@ -182,9 +168,9 @@ class LucaNLPAdapter(NLPAdapter):
         abs_dataset, summary = summary(dataset=test_predictions, k=best_k,
                                        clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
                                        abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
-                                       abstract=True, n_mess=5, wrdcld=True,
+                                       abstract=True, n_mess=5, wrdcld=False,
                                        original=self.context['dataset'], src_col="src_hostname", n_src=5,
-                                       dst_col="dst_hostname", n_dst=5, timeplot=True,
+                                       dst_col="dst_hostname", n_dst=5, timeplot=False,
                                        time_col=self.context['timestamp_tr_x'],
                                        save_path="results/sample_app/K={}".format(best_k), tokenization=self.tokenization)
         return (summary)

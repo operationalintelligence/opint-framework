@@ -1,16 +1,16 @@
 from opint_framework.core.nlp.nlp import Tokenization
-from opint_framework.apps.example_app.nlp.luca.text_parsing_utils import split_urls, clean_tokens
+from opint_framework.apps.example_app.nlp.pyspark_based.text_parsing_utils import split_urls, clean_tokens
 
 
-class LucaTokenization(Tokenization):
+class pysparkTokenization(Tokenization):
 
     def __init__(self, ctx):
-        super(LucaTokenization, self).__init__(ctx)
+        super(pysparkTokenization, self).__init__(ctx)
 
     def tokenize_messages(self, **kwargs):
         """Take input message and split it into tokens.
 
-            -- params (given by the parent class LucaTokenization):
+            -- params (given by the parent class pysparkTokenization):
             dataset (pyspark.sql.dataframe.DataFrame): data frame with at least error string and id columns
             err_col (string): name of the error string column
             id_col (string): name of the message id column
@@ -107,7 +107,7 @@ class LucaTokenization(Tokenization):
         """
         from pyspark.sql.functions import udf
         from pyspark.sql.types import StringType, ArrayType
-        from opint_framework.apps.example_app.nlp.luca.abstraction_utils import abstract_message
+        from opint_framework.apps.example_app.nlp.pyspark_based.abstraction_utils import abstract_message
         # transform in user defined function
         abstract_message_udf = udf(abstract_message, ArrayType(StringType()))
 

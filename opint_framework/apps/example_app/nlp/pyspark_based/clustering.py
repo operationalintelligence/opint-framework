@@ -1,13 +1,13 @@
 from opint_framework.core.nlp.nlp import Clustering
-from opint_framework.apps.example_app.nlp.luca.kmeans import *
+from opint_framework.apps.example_app.nlp.pyspark_based.kmeans import *
 
-class LucaClustering(Clustering):
+class pyspark_KM_Clustering(Clustering):
 
     def update_model(self, path_to_model, tokenized):
         pass
 
     def __init__(self, ctx):
-        super(LucaClustering, self).__init__(ctx)
+        super(pyspark_KM_Clustering, self).__init__(ctx)
 
     def data_preparation(self, messages, tks_vec):
         """Take input dataset with Word2Vec representation in tks_vec column and properly format to feed into pyspark.ml.KMeans."""
