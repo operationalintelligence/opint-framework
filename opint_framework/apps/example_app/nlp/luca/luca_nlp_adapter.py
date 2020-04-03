@@ -22,7 +22,7 @@ class LucaNLPAdapter(NLPAdapter):
                  ):
         # self.context = {}
 
-        super(LucaNLPAdapter, self).__init__(name="Luca&Mayank"#,
+        super(LucaNLPAdapter, self).__init__(name="PySpark_adapter"#,
                                              # tokenization=self.tokenization,
                                              # vectorization=LucaVectorization(self.context, self.tokenization),
                                              # clusterization=LucaClustering(self.context))
@@ -191,23 +191,23 @@ class LucaNLPAdapter(NLPAdapter):
 
     def execute(self):
         try:
-            print(f"NLP Adapter - {self.name}: Pre Processing input data")
+            print(f"\nNLP Adapter - {self.name}: Pre Processing input data")
             self.pre_process()
         except Exception as error:
-            print(f"NLP Adapter - {self.name}: Pre Processing failed: {str(error)}")
+            print(f"\nNLP Adapter - {self.name}: Pre Processing failed: {str(error)}")
             traceback.print_exc()
         try:
-            print(f"NLP Adapter - {self.name}: Executing vectorization, tokenization and clusterization")
+            print(f"\nNLP Adapter - {self.name}: Executing vectorization, tokenization and clusterization")
             model = self.run()
         except Exception as error:
-            print(f"NLP Adapter - {self.name}: Log analysis failed: {str(error)}")
+            print(f"\nNLP Adapter - {self.name}: Log analysis failed: {str(error)}")
             traceback.print_exc()
         try:
-            print(f"NLP Adapter - {self.name}: Post processing")
+            print(f"\nNLP Adapter - {self.name}: Post processing")
             summary = self.post_process(model=model)
             return(summary)
         except Exception as error:
-            print(f"NLP Adapter - {self.name}: Post Processing failed: {str(error)}")
+            print(f"\nNLP Adapter - {self.name}: Post Processing failed: {str(error)}")
             traceback.print_exc()
 
 
