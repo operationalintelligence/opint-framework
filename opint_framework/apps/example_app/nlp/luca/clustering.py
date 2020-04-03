@@ -56,6 +56,7 @@ class LucaClustering(Clustering):
         if log_path:
             log_path = Path(log_path)
             log_path.parent.mkdir(parents=True, exist_ok=True)
+            print("Saving training metrics to: {}".format(log_path))
             with open(log_path, "a") as log:
                 log.write("With K={}\n\n".format(k))
                 log.write("Started at: {}\n".format(start_time_string))
@@ -77,6 +78,7 @@ class LucaClustering(Clustering):
 
         if path_to_model:
             outname = "{}/kmeans_K={}".format(path_to_model, k)
+            print("Saving K-Means model to: {}".format(outname))
             if mode == "overwrite":
                 model.write().overwrite().save(outname)
             else:

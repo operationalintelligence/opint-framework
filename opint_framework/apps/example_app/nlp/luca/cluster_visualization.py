@@ -255,6 +255,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
         outname = save_path / "summary.csv"  # .format(clust_id[clust_col])
+        print("Saving clustering summary to: {}".format(outname))
         summary_df.to_csv(outname, index_label=clust_col)
 
         # tokens cloud
@@ -310,6 +311,7 @@ def tokens_cloud(dataset, msg_col, clust_col="prediction", save_path=None,
             save_path = Path(save_path)
             save_path.mkdir(parents=True, exist_ok=True)
             outname = save_path / "cluster_{}.png".format(clust_id[clust_col])
+            print("Saving token clouds to: {}".format(outname))
             if os.path.isfile(outname):
                 os.remove(outname)
             fig.savefig(outname, format='png', bbox_inches='tight')
@@ -421,6 +423,7 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
             save_path = Path(save_path)
             save_path.mkdir(parents=True, exist_ok=True)
             outname = save_path / "cluster_{}.png".format(clust_id[clust_col])
+            print("Saving time plots to: {}".format(outname))
             if os.path.isfile(outname):
                 os.remove(outname)
             fig.savefig(outname, format='png', bbox_inches='tight')

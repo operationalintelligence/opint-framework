@@ -51,6 +51,7 @@ class LucaVectorization(Vectorization):
             p.parent.mkdir(parents=True, exist_ok=True)
             outname = "{}/w2v_sample_app_example_VS={}_MC={}_WS={}".format(path_to_model, embedding_size, min_count, window)
             self.ctx["w2v_model_path"] = outname
+            print("Saving w2v model to: {}".format(outname))
             if mode == "overwrite":
                 model.write().overwrite().save(outname)
             else:
