@@ -22,7 +22,7 @@ class pysparkNLPAdapter(NLPAdapter):
                  ):
         # self.context = {}
 
-        super(pysparkNLPAdapter, self).__init__(name="PySpark_adapter"  #,
+        super(pysparkNLPAdapter, self).__init__(name="PySpark_adapter"  # ,
                                                 # tokenization=self.tokenization,
                                                 # vectorization=pyspark_w2v_Vectorization(self.context, self.tokenization),
                                                 # clusterization=pyspark_KM_Clustering(self.context))
@@ -67,12 +67,12 @@ class pysparkNLPAdapter(NLPAdapter):
             self.context['path_list'])  # WHY WE INTRODUCE NEW KEY? -> changed all_tranfers with dataset
 
         # retrieve just data
-        all_transfers = self.context['dataset']#.select("data.*")
+        all_transfers = self.context['dataset']  # .select("data.*")
 
         # filter test_errors only
-        test_errors = all_transfers#.filter(all_transfers["t_final_transfer_state_flag"] == 0)
+        test_errors = all_transfers  # .filter(all_transfers["t_final_transfer_state_flag"] == 0)
         if self.context['vo'] is not None:
-            test_errors = test_errors#.filter(test_errors["vo"] == self.context['vo'])
+            test_errors = test_errors  # .filter(test_errors["vo"] == self.context['vo'])
 
         # add row id and select only relevant variables
         test_errors = test_errors.withColumn(f"{self.context['id_col']}", F.monotonically_increasing_id()).select(
@@ -89,12 +89,13 @@ class pysparkNLPAdapter(NLPAdapter):
 
         if self.context['w2v_mode'] == "train":
             w2v_model = self.vectorization.train_model(token_data, path_to_model=self.context['w2v_model_path'],
-                                                         tks_col=self.context['tks_col'],
-                                                         id_col=self.context['id_col'], out_col=self.context['tks_vec'],
-                                                         embedding_size=self.context['emb_size'],
-                                                         window=self.context['win_size'],
-                                                         min_count=self.context['min_count'],
-                                                         workers=self.context['n_cores'], mode=self.context["w2v_save_mode"])
+                                                       tks_col=self.context['tks_col'],
+                                                       id_col=self.context['id_col'], out_col=self.context['tks_vec'],
+                                                       embedding_size=self.context['emb_size'],
+                                                       window=self.context['win_size'],
+                                                       min_count=self.context['min_count'],
+                                                       workers=self.context['n_cores'],
+                                                       mode=self.context["w2v_save_mode"])
             vector_data = w2v_model.transform(token_data)
 
         elif self.context['w2v_mode'] == "load":
@@ -126,18 +127,21 @@ class pysparkNLPAdapter(NLPAdapter):
             kmeans_model_path = None
             save_mode = "new"
 
-        best_k_log_path = Path(self.context['log_path']).parent / "best_K={}.txt".format(k_sil)
+        if self.context['log_path']:
+            best_k_log_path = Path(self.context['log_path']).parent / "best_K={}.txt".format(k_sil)
+        else:
+            best_k_log_path = None
 
         # transform data into clustering suitable format
         vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
 
         # train best K
         kmeans_model = self.clusterization.train_model(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil,
-                                                        distance=self.context['distance'],
-                                                        initSteps=self.context['tr_initSteps'],
-                                                        tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
-                                                        path_to_model=kmeans_model_path, mode=save_mode,
-                                                        log_path=best_k_log_path)
+                                                       distance=self.context['distance'],
+                                                       initSteps=self.context['tr_initSteps'],
+                                                       tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
+                                                       path_to_model=kmeans_model_path, mode=save_mode,
+                                                       log_path=best_k_log_path)
 
         return (kmeans_model)
 
@@ -160,19 +164,21 @@ class pysparkNLPAdapter(NLPAdapter):
             w2v_model = self.vectorization.load_model(self.context['w2v_model_path'])
             test_predictions = w2v_model.transform(test_predictions)
             test_predictions = self.clusterization.data_preparation(test_predictions, self.context['tks_vec'])
-            ## WARNING: IF WE WANT TO USE ONLY POST PROCESSING WE HAVE TO TAKE CARE OF INPUT PARAMETERS
+            ## WARNING: IF WE WANT TO USE ONLY POST PROCESSING WE NEED TO TAKE CARE OF INPUT PARAMETERS
 
-            test_predictions = self.clusterization.predict(tokenized=test_predictions, model=model, pred_mode=self.context['pred_mode'],
+            test_predictions = self.clusterization.predict(tokenized=test_predictions, model=model,
+                                                           pred_mode=self.context['pred_mode'],
                                                            # new_cluster_thresh=None, update_model_path=kmeans_model_path--> need to be defined
                                                            )
         abs_dataset, summary = summary(dataset=test_predictions, k=best_k,
                                        clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
                                        abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
-                                       abstract=True, n_mess=5, wrdcld=False,
-                                       original=self.context['dataset'], src_col="src_hostname", n_src=5,
-                                       dst_col="dst_hostname", n_dst=5, timeplot=False,
+                                       abstract=True, n_mess=None, wrdcld=False,
+                                       original=self.context['dataset'], src_col="src_hostname", n_src=None,
+                                       dst_col="dst_hostname", n_dst=None, timeplot=False,
                                        time_col=self.context['timestamp_tr_x'],
-                                       save_path="results/sample_app/K={}".format(best_k), tokenization=self.tokenization)
+                                       save_path="results/sample_app/K={}".format(best_k),
+                                       tokenization=self.tokenization)
         return (summary)
 
     def execute(self):
@@ -191,9 +197,7 @@ class pysparkNLPAdapter(NLPAdapter):
         try:
             print(f"\nNLP Adapter - {self.name}: Post processing")
             summary = self.post_process(model=model)
-            return(summary)
+            return (summary)
         except Exception as error:
             print(f"\nNLP Adapter - {self.name}: Post Processing failed: {str(error)}")
             traceback.print_exc()
-
-

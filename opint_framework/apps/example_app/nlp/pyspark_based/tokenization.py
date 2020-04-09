@@ -65,9 +65,9 @@ class pysparkTokenization(Tokenization):
         """Takes pyspark dataframe \"tokenized\" where \"err_col\" contains list of tokens
         and return a dataframe with the additional \"message_string\" column where tokens are joint back.
         """
-        # err_col = self.ctx['err_col']
-        # id_col = self.ctx['id_col']
-        # dataset = self.ctx['dataset']
+        # print(type(tokenized))
+        # print(tokenized.printSchema())
+        print(tks_col)
 
         # import pyspark.sql.functions as F
         from pyspark.sql.functions import udf
