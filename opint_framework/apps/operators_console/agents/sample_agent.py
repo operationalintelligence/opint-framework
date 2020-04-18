@@ -1,4 +1,4 @@
-`from opint_framework.core.prototypes.BaseAgent import BaseAgent
+from opint_framework.core.prototypes.BaseAgent import BaseAgent
 import threading
 
 
