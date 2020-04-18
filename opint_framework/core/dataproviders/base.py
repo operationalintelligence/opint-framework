@@ -45,8 +45,9 @@ class BaseLoader(object):
             return data
         except Exception as e:
             print('WARNING: Couldn\'t read data from source. Trying to use cache file. Error: %s' % e)
+            raise(e)
             try:
-                with open(cache, "r") as f:
+                with open(cache, "r+") as f:
                     content = f.read()
                     return content
             except Exception as e:
