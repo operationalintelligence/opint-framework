@@ -22,6 +22,7 @@ class HDFSLoader(BaseLoader):
             fs = spark._jvm.org.apache.hadoop.fs.FileSystem.get(spark._jsc.hadoopConfiguration())
             list_status = fs.listStatus(spark._jvm.org.apache.hadoop.fs.Path(path))
             ret = []
+            # FIXME: pulling works but you can't append datasets like this. Not fixed since method is not yet used.
             for file in [file.getPath().getName() for file in list_status]:
                 ret.append(cls.pull_hdfs_json(path+file, spark))
             return ret
@@ -39,8 +40,5 @@ class HDFSLoader(BaseLoader):
         spark = SparkSession.builder.master(kwargs.get('spark_master'))\
             .appName(kwargs.get('spark_name')).getOrCreate()
         if kwargs.get('type') == 'JSON':
-            if kwargs.get('path'):
-                return cls.pull_hdfs_dir(path=kwargs.get('path'), spark=spark)
-            elif kwargs.get('file'):
-                return cls.pull_hdfs_json(path=kwargs.get('file'), spark=spark)
+            return cls.pull_hdfs_json(path=kwargs.get('path'), spark=spark)
         return None
