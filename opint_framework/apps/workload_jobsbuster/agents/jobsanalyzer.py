@@ -5,15 +5,28 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from catboost import CatBoostRegressor, CatBoostClassifier, Pool, EFstrType
+from sklearn.feature_extraction.text import CountVectorizer
+import hashlib
+
 import tempfile
 import datetime
 from django.utils import timezone
 import opint_framework.apps.workload_jobsbuster.api.pandaDataImporter as dataImporter
 import traceback, sys
 
+diagfields = ['DDMERRORDIAG', 'BROKERAGEERRORDIAG', 'DDMERRORDIAG', 'EXEERRORDIAG', 'JOBDISPATCHERERRORDIAG',
+             'PILOTERRORDIAG', 'SUPERRORDIAG', 'TASKBUFFERERRORDIAG']
+diagcodefields = ['BROKERAGEERRORCODE', 'DDMERRORCODE', 'EXEERRORCODE', 'JOBDISPATCHERERRORCODE', 'PILOTERRORCODE',
+             'SUPERRORCODE', 'TASKBUFFERERRORCODE', 'TRANSEXITCODE']
+
+OI_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 class JobsAnalyserAgent(BaseAgent):
     lock = threading.RLock()
     counter = 0
+    errFrequency = None
+    errorsToProcess = None
+
     def init(self):
         pass
 
@@ -22,21 +35,12 @@ class JobsAnalyserAgent(BaseAgent):
 
         print("JobsAnalyserAgent started")
         lastSession = AnalysisSessions.objects.using('jobs_buster_persistency').order_by('-timewindow_end').first()
-#         if lastSession:
-#             timeGap = datetime.datetime.now(datetime.timezone.utc) - lastSession.timewindow_end.astimezone(timezone.utc)
-#             if timeGap < datetime.timedelta(minutes=30):
-#                 print("JobsAnalyserAgent finished")
-#                 return 0
-# #            datefrom = lastSession.timewindow_end
-# #            minutes = 240
-#             datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=240)
-#             dateto = datetime.datetime.utcnow()
-#         else:
-#             datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=240)
-#             dateto = datetime.datetime.utcnow()
 
-        datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=360)
+        datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=12*60)
         dateto = datetime.datetime.utcnow()
+
+        #datefrom = datetime.datetime.strptime("2020-03-25 13:15:00", OI_DATETIME_FORMAT)
+        #dateto = datetime.datetime.strptime("2020-03-25 14:15:00", OI_DATETIME_FORMAT)
 
         dbsession = AnalysisSessions.objects.using('jobs_buster_persistency').create(timewindow_start=datefrom,
                                                                                      timewindow_end=dateto)
@@ -48,14 +52,11 @@ class JobsAnalyserAgent(BaseAgent):
         preprocessedFrame = self.preprocessRawData(pandasdf)
 
         listOfProblems = []
-        self.classifyIssue(preprocessedFrame, listOfProblems, None)
-        listOfProblems = self.removeDublicates(listOfProblems)
-        listOfProblems = sorted(listOfProblems, key=lambda i: i.lostWallTime, reverse=True)
+        self.findIssues(preprocessedFrame, listOfProblems)
+        #listOfProblems = self.removeDublicates(listOfProblems)
+        #listOfProblems = sorted(listOfProblems, key=lambda i: i.lostWallTime, reverse=True)
 
-        #pickle.dump(listOfProblems, open(settings.datafilespath + "rawdataframe0_daily2.sr", 'wb+'))
-        #listOfProblems = pickle.load(open(settings.datafilespath + "rawdataframe0_daily2.sr", 'rb'))
-
-        self.removeIssuesNewerThan(datefrom)
+        listOfProblems = self.reduceIssues(preprocessedFrame, listOfProblems)
 
         for spottedProblem in listOfProblems:
             issue = WorkflowIssue.objects.using('jobs_buster_persistency').create(session_id_fk=dbsession,
@@ -78,6 +79,7 @@ class JobsAnalyserAgent(BaseAgent):
             ticks = self.historgramFailures(spottedProblem.filterByIssue(preprocessedFrame), spottedProblem)
             self.saveFailureTicks(ticks, issue)
 
+        AnalysisSessions.objects.using('jobs_buster_persistency').filter(analysis_finished__isnull=False).delete()
         dbsession.analysis_finished = datetime.datetime.now(datetime.timezone.utc)
         dbsession.save(using='jobs_buster_persistency')
         print("JobsAnalyserAgent finished")
@@ -120,63 +122,144 @@ class JobsAnalyserAgent(BaseAgent):
         newframe = pd.DataFrame()
 
         # Cathegorial
-        newframe['ATLASRELEASE'] = frame['ATLASRELEASE']
+#        newframe['ATLASRELEASE'] = frame['ATLASRELEASE']
 #        newframe['PILOTVERSION'] = frame['PILOTID'].apply(
 #            lambda x: x.split('|')[-1] if x and '|' in x else 'Not specified').str.replace(" ", "%20")
-        newframe['CLOUD'] = frame['CLOUD']
-        newframe['CMTCONFIG'] = frame['CMTCONFIG']
+#        newframe['CLOUD'] = frame['CLOUD']
+#        newframe['CMTCONFIG'] = frame['CMTCONFIG']
         newframe['COMPUTINGSITE'] = frame['COMPUTINGSITE']
         newframe['COMPUTINGELEMENT'] = frame['COMPUTINGELEMENT']
         newframe['CREATIONHOST'] = frame['CREATIONHOST']
         newframe['DESTINATIONSE'] = frame['DESTINATIONSE']
 #        newframe['EVENTSERVICE'] = frame['EVENTSERVICE'].apply(str)
-        newframe['PROCESSINGTYPE'] = frame['PROCESSINGTYPE']
+#       newframe['PROCESSINGTYPE'] = frame['PROCESSINGTYPE']
         newframe['PRODUSERNAME'] = frame['PRODUSERNAME']
-        newframe['RESOURCE_TYPE'] = frame['RESOURCE_TYPE']
-        newframe['SPECIALHANDLING'] = frame['SPECIALHANDLING']
+#        newframe['RESOURCE_TYPE'] = frame['RESOURCE_TYPE']
+#        newframe['SPECIALHANDLING'] = frame['SPECIALHANDLING']
 #       newframe['GSHARE'] = frame['GSHARE']
-        newframe['HOMEPACKAGE'] = frame['HOMEPACKAGE']
-        newframe['INPUTFILEPROJECT'] = frame['INPUTFILEPROJECT']
-        newframe['INPUTFILETYPE'] = frame['INPUTFILETYPE']
+#        newframe['HOMEPACKAGE'] = frame['HOMEPACKAGE']
+#        newframe['INPUTFILEPROJECT'] = frame['INPUTFILEPROJECT']
+#        newframe['INPUTFILETYPE'] = frame['INPUTFILETYPE']
         newframe['JEDITASKID'] = frame['JEDITASKID'].apply(str)
         newframe['JOBSTATUS'] = frame['JOBSTATUS'].apply(str)
         newframe['NUCLEUS'] = frame['NUCLEUS'].apply(str)
-        newframe['TRANSFORMATION'] = frame['TRANSFORMATION']
-        newframe['WORKINGGROUP'] = frame['WORKINGGROUP']
+#        newframe['TRANSFORMATION'] = frame['TRANSFORMATION']
+#        newframe['WORKINGGROUP'] = frame['WORKINGGROUP']
         newframe['REQID'] = frame['REQID'].apply(str)
+
+        # Errors data
+        newframe['BROKERAGEERRORCODE'] = frame['BROKERAGEERRORCODE']
+        newframe['BROKERAGEERRORDIAG'] = frame['BROKERAGEERRORDIAG']
+        newframe['DDMERRORCODE'] = frame['DDMERRORCODE']
+        newframe['DDMERRORDIAG'] = frame['DDMERRORDIAG']
+        newframe['EXEERRORCODE'] = frame['EXEERRORCODE']
+        newframe['EXEERRORDIAG'] = frame['EXEERRORDIAG']
+        newframe['JOBDISPATCHERERRORCODE'] = frame['JOBDISPATCHERERRORCODE']
+        newframe['JOBDISPATCHERERRORDIAG'] = frame['JOBDISPATCHERERRORDIAG']
+        newframe['PILOTERRORCODE'] = frame['PILOTERRORCODE']
+        newframe['PILOTERRORDIAG'] = frame['PILOTERRORDIAG']
+        newframe['SUPERRORCODE'] = frame['SUPERRORCODE']
+        newframe['SUPERRORDIAG'] = frame['SUPERRORDIAG']
+        newframe['TASKBUFFERERRORCODE'] = frame['TASKBUFFERERRORCODE']
+        newframe['TASKBUFFERERRORDIAG'] = frame['TASKBUFFERERRORDIAG']
+        newframe['TRANSEXITCODE'] = frame['TRANSEXITCODE']
+
         newframe.fillna(value="Not specified", inplace=True)
 
         # Numerical with NA
         newframe['ENDTIME'] = frame['ENDTIME']
 #        newframe['ACTUALCORECOUNT'] = frame['ACTUALCORECOUNT']
         newframe['LOSTWALLTIME'] = (frame['LOSTWALLTIME'])
-        newframe['NINPUTDATAFILES'] = frame['NINPUTDATAFILES']
+#        newframe['NINPUTDATAFILES'] = frame['NINPUTDATAFILES']
 
         newframe['ISSUCCESS'] = frame['JOBSTATUS'].apply(lambda x: 0 if x and x == 'failed' else 1)
         newframe['ISFAILED'] = frame['JOBSTATUS'].apply(lambda x: 1 if x and x == 'failed' else 0)
-
+        newframe['PANDAID'] = frame['PANDAID']
         newframe.fillna(value=0, inplace=True)
 
         # Sometimes a job failed even before start
         newframe['STARTTIME'] = frame['STARTTIME']
+        for field in diagfields:
+            self.removeStopWords(field, newframe)
+        newframe['combinederrors'] = newframe.apply(self.combineErrors, axis=1)
+
+        frequencyW = newframe.groupby('combinederrors').agg(
+            {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
+             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('LOSTWALLTIME', 'sum'), ascending=False).head(50)
+        frequencyF = newframe.groupby('combinederrors').agg(
+            {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
+             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False).head(50)
+        self.errFrequency = pd.concat([frequencyW, frequencyF])
+        for i, row in self.errFrequency.iterrows():
+            if row[4] == row[5]:
+                self.errFrequency.loc[i, 'ENDTIME'] = (
+                row[4] - datetime.timedelta(minutes=10), row[5] + datetime.timedelta(minutes=10))
+        self.errorsToProcess = list(set(self.errFrequency['combinederrors'].tolist()))
         return newframe
 
 
-    def analyseProblem(self, frame_loc):
+    def getHash(self, strtohash):
+        hash_object = hashlib.sha1(str(strtohash).encode())
+        return hash_object.hexdigest()[:6]
+
+
+    def combineErrors(self, row):
+        ret = ''
+        for fieldname in diagfields + diagcodefields:
+            ret += '|' + self.getHash(row[fieldname])
+        return ret
+
+
+    def removeStopWords(self, diagfield, frame):
+        def my_tokenizer(s):
+            return s.split()
+
+        vect = CountVectorizer(tokenizer=my_tokenizer, analyzer="word", stop_words=None, preprocessor=None)
+        corpus = frame[diagfield].tolist()
+        bag_of_words = vect.fit_transform(corpus)
+        sum_words = bag_of_words.sum(axis=0)
+        words_freq = [(word, sum_words[0, idx]) for word, idx in vect.vocabulary_.items()]
+        words_freqf = [x[0] for x in filter(lambda x: x[1] < 3, words_freq)]
+        # print(words_freqf)
+        words_freqf = set(words_freqf)
+
+        def replace_all(text):
+            common_tokens = set(my_tokenizer(text)).intersection(words_freqf)
+            for i in common_tokens:
+                text = text.replace(i, 'replacement') if len(i) > 3 else text
+            return text
+        frame[diagfield] = frame[diagfield].apply(replace_all)
+
+
+    def analyseProblem(self, frame_loc, hashval):
         newframe_r_X = frame_loc.copy()
 
+        del newframe_r_X['PANDAID']
         del newframe_r_X['STARTTIME']
         del newframe_r_X['ENDTIME']
         del newframe_r_X['LOSTWALLTIME']
         del newframe_r_X['JOBSTATUS']
         del newframe_r_X['ISSUCCESS']
         del newframe_r_X['ISFAILED']
+        del newframe_r_X['BROKERAGEERRORCODE']
+        del newframe_r_X['BROKERAGEERRORDIAG']
+        del newframe_r_X['DDMERRORCODE']
+        del newframe_r_X['DDMERRORDIAG']
+        del newframe_r_X['EXEERRORCODE']
+        del newframe_r_X['EXEERRORDIAG']
+        del newframe_r_X['JOBDISPATCHERERRORCODE']
+        del newframe_r_X['JOBDISPATCHERERRORDIAG']
+        del newframe_r_X['PILOTERRORCODE']
+        del newframe_r_X['PILOTERRORDIAG']
+        del newframe_r_X['SUPERRORCODE']
+        del newframe_r_X['SUPERRORDIAG']
+        del newframe_r_X['TASKBUFFERERRORCODE']
+        del newframe_r_X['TASKBUFFERERRORDIAG']
+        del newframe_r_X['TRANSEXITCODE']
+        del newframe_r_X['combinederrors']
 
         categorical_features_indices = list(np.where((newframe_r_X.dtypes == np.object))[0])
-        #newframe_r_Y = frame_loc[['LOSTWALLTIME']].copy()
-        #newframe_r_Y['LOSTWALLTIME'] = newframe_r_Y['LOSTWALLTIME'].apply(lambda x: x if x == 0 else np.log(x))
-
-        newframe_r_Y = frame_loc[['ISFAILED']].copy()
+        newframe_r_Y = frame_loc['combinederrors'].apply(lambda x: 0 if x and x == hashval else 1)
 
         X_train, X_validation, y_train, y_validation = train_test_split(newframe_r_X, newframe_r_Y, train_size=0.85,
                                                                         random_state=42)
@@ -185,17 +268,17 @@ class JobsAnalyserAgent(BaseAgent):
 
         with tempfile.TemporaryDirectory() as tmpdirname:
             model = CatBoostClassifier(
-                iterations=400,
+                iterations=200,
                 random_seed=2,
                 logging_level='Silent',
-                depth=2,
+                depth=5,
                 learning_rate=0.01,
                 task_type="CPU",
                 train_dir=tmpdirname,
-                used_ram_limit='6gb',
             )
             model.fit(
                 train_pool, eval_set=validate_pool,
+                #     logging_level='Verbose',  # you can uncomment this for text output
                 plot=False
             )
 
@@ -217,119 +300,144 @@ class JobsAnalyserAgent(BaseAgent):
 
         # We assume that input frame has the same time window as evaluated features
         def filterByIssue(self, frameWhole):
-            return frameWhole.loc[(frameWhole[list(self.features)] == pd.Series(self.features)).all(axis=1)]
-
+            mask = (frameWhole['ENDTIME'] >= self.timeWindow['start']) & (
+                        frameWhole['ENDTIME'] <= self.timeWindow['end'])
+            return frameWhole.loc[(frameWhole[list(self.features)] == pd.Series(self.features)).all(axis=1)].loc[mask]
         def filterByAntiPattern(self, frameWhole):
-            return frameWhole.loc[~((frameWhole[list(self.features)] == pd.Series(self.features)).all(axis=1))]
-
+            mask = (frameWhole['ENDTIME'] >= self.timeWindow['start']) & (
+                        frameWhole['ENDTIME'] <= self.timeWindow['end'])
+            return frameWhole.loc[~((frameWhole[list(self.features)] == pd.Series(self.features)).all(axis=1))].loc[
+                mask]
         def appendFeatures(self, parentIssue):
             self.features.update(parentIssue.features)
 
 
-    def scrubStatistics(self, frame_loc):
+    def scrubStatistics(self, frame_loc, hashval):
 
         # In this function we determine the principal issue related feature existing in
         # supplied dataframe
         # We count statistics of failed jobs associated with the problem and return correspondent object
 
-        (feature_names, feature_importances, interactions, X_tr_col) = self.analyseProblem(frame_loc)
-        feature_importances_sorted = sorted(zip(feature_importances, feature_names), reverse=True)
+        freq = self.errFrequency.loc[self.errFrequency['combinederrors'] == hashval].iloc[0]
+        mask = (frame_loc['ENDTIME'] >= freq['ENDTIME']['min']) & (frame_loc['ENDTIME'] <= freq['ENDTIME']['max']) & ((frame_loc['combinederrors'] == hashval) | (frame_loc['ISFAILED'] == 0))
+        try:
+            (feature_names, feature_importances, interactions, X_tr_col) = self.analyseProblem(frame_loc.loc[mask], hashval)
+        except:
+            return None
+        feature_importances = filter(lambda x: x[0] > 10, zip(feature_importances, feature_names))
         featuresLists = []
-        score, name = feature_importances_sorted[0]
-        if score > 25:
-            featuresLists.append(name)
+        featuresLists.extend([x[1] for x in feature_importances])
         if len(featuresLists) > 0:
-            groups = frame_loc.groupby(featuresLists[0]).agg(
+            groups = frame_loc.loc[mask].groupby(featuresLists).agg(
                 {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
-                 'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('LOSTWALLTIME', 'sum'), ascending=False)
+                 'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False)
         else:
             return None
 
         foundIssue = self.IssueDescriptor()
-        foundIssue.features = {featuresLists[0]: groups[featuresLists[0]][groups.index[0]]}
+        foundIssue.features = {feature: groups[feature][groups.index[0]] for feature in featuresLists}
         foundIssue.nFailedJobs = groups[('ISFAILED', 'sum')][groups.index[0]]
         foundIssue.nSuccessJobs = groups[('ISSUCCESS', 'sum')][groups.index[0]]
         foundIssue.lostWallTime = groups[('LOSTWALLTIME', 'sum')][groups.index[0]]
-        foundIssue.timeWindow = {"start": groups[('ENDTIME', 'min')][groups.index[0]],
-                                 "end": groups[('ENDTIME', 'max')][groups.index[0]]}
+        starttime = groups[('ENDTIME', 'min')][groups.index[0]]
+        endtime = groups[('ENDTIME', 'max')][groups.index[0]]
+        if starttime == endtime:
+            starttime = starttime - datetime.timedelta(minutes=10)
+            endtime = endtime + datetime.timedelta(minutes=10)
+
+        foundIssue.timeWindow = {"start": starttime,
+                                 "end": endtime}
         foundIssue.purity = foundIssue.nFailedJobs / (foundIssue.nFailedJobs + foundIssue.nSuccessJobs)
         return foundIssue
 
 
-    def checkDFEligible(self, frame_loc):
-        ret = True
-        if not ((frame_loc.loc[(frame_loc['ISSUCCESS'] == 1)].shape[0] > 3) and (
-                frame_loc.loc[(frame_loc['ISFAILED'] == 1)].shape[0] > 5)
-                and frame_loc['LOSTWALLTIME'].sum() > 3600 * 24):
-            ret = False
-        uniqueval = dict(frame_loc.nunique())
-
-        variety = 0
-        for feature, value in uniqueval.items():
-            if (feature not in ('ISFAILED', 'ISSUCCESS', 'LOSTWALLTIME', 'STARTTIME', 'ENDTIME', 'JOBSTATUS')):
-                if value > 1:
-                    variety += 1
-                if variety > 5:
-                    break
-        if variety < 3:
-            ret = False
-
-        return ret
+    def findIssues(self, frame_loc, listOfProblems=None):
+        for errorHash in self.errorsToProcess:
+            issue = self.scrubStatistics(frame_loc, errorHash)
+            if issue:
+                listOfProblems.append(issue)
 
 
-    def classifyIssue(self, frame_loc, listOfProblems=None, parentIssue=None, deepnesslog=0):
+    def comparefeatures(self, features1, features2):
+        numCommonFeat = 0
+        for key, value in features1.items():
+            if (features2.get(key, None) == value):
+                numCommonFeat += 1
+        if (len(features1) == len(features1) == numCommonFeat):
+            return True
+        if (numCommonFeat > 0) and ((numCommonFeat + 1 == len(features1)) or (numCommonFeat + 1 == len(features2))):
+            return True
+        return False
 
-        if parentIssue is not None:
-            focusedDFrame = parentIssue.filterByIssue(frame_loc).copy()
+    def mergeissueinto(self, destination_issue, source_issue):
+        destination_issue.nFailedJobs += source_issue.nFailedJobs
+        destination_issue.nSuccessJobs += source_issue.nSuccessJobs
+        destination_issue.lostWallTime += source_issue.lostWallTime
+        destination_issue.timeWindow = {
+            "start": min(destination_issue.timeWindow['start'], source_issue.timeWindow['start']),
+            "end": max(destination_issue.timeWindow['end'], source_issue.timeWindow['end'])}
+        return destination_issue
+
+    def mergeissues(self, issue1, issue2):
+        if issue1.nFailedJobs > issue2.nFailedJobs:
+            return self.mergeissueinto(issue1, issue2)
         else:
-            focusedDFrame = frame_loc.copy()
+            return self.mergeissueinto(issue2, issue1)
 
-        nestedIssue = None
+    def reduceIssues(self, frame_loc, issues):
+        classes = {}
+        overlapping = {}
+        totals = {}
+        for index, issue in enumerate(issues):
+            frame = issue.filterByIssue(frame_loc).loc[frame_loc['ISFAILED'] == 1]
+            totals[index] = len(frame.index)
+            pandaids = frame['PANDAID'].tolist()
+            classes[index] = set(pandaids)
+        for i, pandaids in classes.items():
+            for j in range(i + 1, len(classes) - 1):
+                if len(pandaids & classes[j]):
+                    overlapping.setdefault(i, {})[j] = len(pandaids & classes[j])
+        issues_to_delete = []
+        for key in totals:
+            if key in overlapping:
+                if totals[key] < max([totals[crossed_item] for crossed_item in overlapping[key]]):
+                    issues_to_delete.append(key)
+        reduced_issues = []
+        for index, issue in enumerate(issues):
+            if index not in issues_to_delete:
+                reduced_issues.append(issue)
 
-        if self.checkDFEligible(focusedDFrame):
-            try:
-                nestedIssue = self.scrubStatistics(focusedDFrame)
-            except:
-                print("-" * 60)
-                traceback.print_exc(file=sys.stdout)
-                print("-" * 60)
-                pass
+        mergelist = {}
+        for index, issue in enumerate(reduced_issues):
+            for j in range(index + 1, len(reduced_issues) - 1):
+                features1 = issue.features
+                features2 = reduced_issues[j].features
+                if self.comparefeatures(features1, features2):
+                    mergelist.setdefault(index, []).append(j)
 
-        elif parentIssue is not None:
-            listOfProblems.append(parentIssue)
-            # print("\nAdding issue #", counter, " deepness:", deepnesslog)
-            # print("Parent features:", parentIssue.features)
-            # print("nSuccessJobs:", parentIssue.nSuccessJobs, " nFailedJobs:", parentIssue.nFailedJobs)
-            self.counter += 1
-            return None
+        mergelist2 = []
+        for key, value in mergelist.items():
+            items = set([key] + value)
+            mergelist2.append(items)
 
-        if (parentIssue is not None) and (nestedIssue is not None):
-            nestedIssue.appendFeatures(parentIssue)
+        for i in mergelist2:
+            for item in mergelist2:
+                intersection = item.intersection(i)
+                if len(intersection) > 0:
+                    i.update(item)
+        mergelist2 = list(set(map(tuple, mergelist2)))
 
-            if (nestedIssue.purity > parentIssue.purity and parentIssue.nSuccessJobs > 0 and parentIssue.nFailedJobs > 0) or not self.checkDFEligible(
-                    frame_loc):
-                self.classifyIssue(frame_loc, listOfProblems, nestedIssue, deepnesslog + 1)
-            else:
-                listOfProblems.append(parentIssue)
-                # print("\nAdding issue #", counter, " deepness:", deepnesslog)
-                # print("Parent features:", parentIssue.features)
-                # print("Nested features:", nestedIssue.features)
-                # print("nSuccessJobs:", nestedIssue.nSuccessJobs, " nFailedJobs:", nestedIssue.nFailedJobs)
-                self.counter += 1
+        mergeditemsindexes = set()
+        mergeditems = []
+        for items in mergelist2:
+            for i, item in enumerate(items[1:], 1):
+                reduced_issues[items[0]] = self.mergeissues(reduced_issues[items[0]], reduced_issues[item])
+                mergeditemsindexes.add(item)
+            mergeditems.append(reduced_issues[items[0]])
+            mergeditemsindexes.add(items[0])
 
+        for i, item in enumerate(reduced_issues):
+            if i not in mergeditemsindexes:
+                mergeditems.append(reduced_issues[i])
 
-        elif (nestedIssue is not None):
-            self.classifyIssue(focusedDFrame, listOfProblems, nestedIssue, deepnesslog + 1)
-
-        if (nestedIssue is not None):
-            restDFrame = nestedIssue.filterByAntiPattern(frame_loc).copy()
-            if self.checkDFEligible(restDFrame):
-                try:
-                    self.classifyIssue(restDFrame, listOfProblems, parentIssue, deepnesslog + 1)
-                except:
-                    # print("-" * 60)
-                    # traceback.print_exc(file=sys.stdout)
-                    # print("-" * 60)
-                    pass
-
-        del focusedDFrame
+        return mergeditems

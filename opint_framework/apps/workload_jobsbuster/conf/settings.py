@@ -24,7 +24,11 @@ DB_JOBS_PASS = ''
 DB_PERS_USER = ''
 DB_PERS_PASS = ''
 
-# exec(open(str(Path.home())+"/private/db_settings.py").read())
+db_settings = str(Path.home())+"/private/db_settings.py"
+try:
+    exec(open(db_settings).read())
+except FileNotFoundError:
+    print(f'!WARNING!: JobsBuster {db_settings} does not exist.')
 
 DATABASES = {
     'default': {},
