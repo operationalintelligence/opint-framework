@@ -1,0 +1,5 @@
+# sample data
+/sample_data/**
+
+# notebooks
+**/notebooks/**/
