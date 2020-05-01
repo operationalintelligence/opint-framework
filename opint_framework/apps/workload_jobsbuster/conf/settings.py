@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # General activation flag
-IS_ACTIVATED = True
+IS_ACTIVATED = False
 
 # The time period in sec when each agent is called. It is delay between starting time
 # Only once instance of each agent could be executed at the same time
@@ -30,15 +30,15 @@ DATABASES = {
     'default': {},
     'jobs_buster_jobs': {
         'ENGINE': 'django.db.backends.oracle',
-        'HOST': 'localhost',
-        'PORT': '10011',
-        'NAME': 'adcr.cern.ch',
+        'HOST': 'adcr-s.cern.ch',
+        'PORT': '10121',
+        'NAME': 'adcr_pandamon.cern.ch',
         'USER': DB_JOBS_USER, # Defined in private settings
         'PASSWORD': DB_JOBS_PASS # Defined in private settings
     },
     'jobs_buster_persistency': {
         'ENGINE': 'django.db.backends.oracle',
-        'NAME': 'localhost:10015/int8r.cern.ch',
+        'NAME': 'int8r1-v.cern.ch:10121/int8r.cern.ch',
         'USER': DB_PERS_USER,
         'PASSWORD': DB_PERS_PASS
     }

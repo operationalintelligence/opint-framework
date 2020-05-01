@@ -1,5 +1,5 @@
 # General activation flag
-IS_ACTIVATED = True
+IS_ACTIVATED = False
 
 #The deployment setting which activate/deactivate all agents executing in the app
 ENABLE_SCHEDULER = True

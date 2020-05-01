@@ -3,15 +3,10 @@ djangorestframework
 django-rest-auth[with_social]
 django-model-utils
 requests
-flake8
 drf-url-filters
-six
 django-cors-headers
-#mysqlclient
-#pyspark
 whitenoise
-gunicorn
-psycopg2-binary
 djangorestframework-jwt
 schedule
 django_extensions
+python-dateutil
