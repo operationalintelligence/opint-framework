@@ -29,11 +29,16 @@ Install the global (minimal) framework requirements:
 pip install -r ./opint-framework/requirements.txt
 ``` 
 
-_(optional)_ Depending on the usage scenario ones may want to install requirements for specific deployment and application intended to use:
+_(optional)_ Depending on the usage scenario ones may want to install requirements for specific deployment and application intended to use, e.g:
+```commandline
+pip install -r ./opint-framework/opint_framework/apps/workload_jobsbuster/requirements.txt
+```
+
+The following two lines are needed to supply paths and settings to Django:
 ```commandline
 export PYTHONPATH=$(pwd)/opint-framework
 export DJANGO_SETTINGS_MODULE=opint_framework.conf.settings
-``` 
+```commandline
 
 **At this point the agents could be executed:**
 ```commandline
@@ -44,7 +49,7 @@ If installation passed successfully, the following message will be displayed:
 ```commandline
 Hello World from Sample Agent
 ``` 
-and than FrameWork exits. To activate the infinite loop mode, when agents periodically called, 
+and then FrameWork exits. To activate the infinite loop mode, when agents periodically called, 
 the following parameter in the opint-framework/opint_framework/conf/settings.py
 ```commandline
 DO_DEBUG_AGENTS = True
