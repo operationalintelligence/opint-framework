@@ -38,7 +38,7 @@ The following two lines are needed to supply paths and settings to Django:
 ```commandline
 export PYTHONPATH=$(pwd)/opint-framework
 export DJANGO_SETTINGS_MODULE=opint_framework.conf.settings
-```commandline
+```
 
 **At this point the agents could be executed:**
 ```commandline
