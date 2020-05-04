@@ -9,7 +9,7 @@ import pyspark.sql.functions as F
 
 class pysparkNLPAdapter(NLPAdapter):
 
-    def __init__(self, path_list, vo, id_col="msg_id", timestamp_tr_x="timestamp_tr_comp",  ## original data
+    def __init__(self, path_list, vo, id_col="tr_id", timestamp_tr_x="tr_timestamp_complete",  ## original data
                  tks_col="stop_token_1",  ## tokenization
                  w2v_model_path=None, w2v_mode="load", w2v_save_mode="new", emb_size=150, win_size=8, min_count=500,
                  tks_vec="message_vector",  ## word2vec
@@ -18,7 +18,7 @@ class pysparkNLPAdapter(NLPAdapter):
                  distance="cosine", opt_initSteps=10, opt_tol=0.0001, opt_maxIter=30, log_path=None, n_cores=5,
                  ## K_optim
                  tr_initSteps=200, tr_tol=0.000001, tr_maxIter=100,  ## train_kmeans
-                 clust_col="prediction"  # visualization)
+                 clust_col="prediction", timeplot=False, wrdcld=False  # visualization)
                  ):
         # self.context = {}
 
@@ -61,6 +61,8 @@ class pysparkNLPAdapter(NLPAdapter):
         self.context['log_path'] = log_path
         self.context['n_cores'] = n_cores
         self.context['clust_col'] = clust_col
+        self.context['timeplot'] = timeplot
+        self.context['wrdcld'] = wrdcld
 
     def pre_process(self):
         self.context['dataset'] = spark.read.json(
@@ -75,7 +77,7 @@ class pysparkNLPAdapter(NLPAdapter):
             test_errors = test_errors  # .filter(test_errors["vo"] == self.context['vo'])
 
         # add row id and select only relevant variables
-        test_errors = test_errors.withColumn(f"{self.context['id_col']}", F.monotonically_increasing_id()).select(
+        test_errors = test_errors.select(#withColumn(f"{self.context['id_col']}", F.monotonically_increasing_id()).select(
             f"{self.context['id_col']}", "t__error_message", "src_hostname", "dst_hostname",
             f"{self.context['timestamp_tr_x']}")
 
@@ -170,12 +172,12 @@ class pysparkNLPAdapter(NLPAdapter):
                                                            pred_mode=self.context['pred_mode'],
                                                            # new_cluster_thresh=None, update_model_path=kmeans_model_path--> need to be defined
                                                            )
-        abs_dataset, summary = summary(dataset=test_predictions, k=best_k,
+        abs_dataset, summary = summary(dataset=test_predictions, k=best_k, data_id=self.context['id_col'], orig_id=self.context['id_col'],
                                        clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
                                        abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
-                                       abstract=True, n_mess=None, wrdcld=False,
+                                       abstract=True, n_mess=None, wrdcld=self.context['wrdcld'],
                                        original=self.context['dataset'], src_col="src_hostname", n_src=None,
-                                       dst_col="dst_hostname", n_dst=None, timeplot=False,
+                                       dst_col="dst_hostname", n_dst=None, timeplot=self.context['timeplot'],
                                        time_col=self.context['timestamp_tr_x'],
                                        save_path="results/sample_app/K={}".format(best_k),
                                        tokenization=self.tokenization)

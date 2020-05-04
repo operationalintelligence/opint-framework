@@ -71,7 +71,6 @@ def pattern_summary(dataset, clust_col="prediction", tks_col="stop_token_1", abs
     else:
         msg_col = (tks_col, "n_strings")
 
-    print(msg_col)
     grouped_patterns_msg = stats_pattern(dataset=dataset, clust_col=clust_col,
                                          agg_col_in=msg_col[0], agg_col_out=msg_col[1], n_rank=n_mess,
                                          save_path=save_path, tokenization=tokenization)
@@ -144,7 +143,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
         out_cols = [original[col] for col in or_cols]
         out_cols.extend(data_cols)
 
-        dataset = original.join(dataset, original[orig_id] == dataset[data_id],
+        dataset = original.join(dataset, original[orig_id].alias("id") == dataset[data_id],
                                 how="outer").select(out_cols)
         dataset = convert_endpoint_to_site(dataset, "src_hostname", "dst_hostname")
 
@@ -225,7 +224,6 @@ def stats_pattern(dataset, clust_col, agg_col_in, agg_col_out, n_rank, save_path
     if tokenization:
         cols = grouped_patterns.columns
         cols[cols.index(agg_col_in)] = "pattern"
-        print(agg_col_out, agg_col_in)
         grouped_patterns = tokenization.detokenize_messages(grouped_patterns, agg_col_in)
         grouped_patterns = grouped_patterns.drop(agg_col_in)
         grouped_patterns = grouped_patterns.withColumnRenamed("message_string", "pattern").select(cols)
@@ -292,7 +290,7 @@ def tokens_cloud(dataset, msg_col, clust_col="prediction", save_path=None,
     from pathlib import Path
 
     if save_path:
-        print("Saving time plots to: {}".format(save_path))
+        print("Saving tokens cloud to: {}".format(save_path))
 
     for clust_id in dataset.select(clust_col).distinct().collect():
         cluster_messages = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select(msg_col).collect()
@@ -387,7 +385,7 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
     import matplotlib.units as munits
 
     dataset = (dataset.filter(F.col(time_col) > 0)  # ignore null values
-               .withColumn("datetime_str", F.from_unixtime(F.col('timestamp_tr_comp') / 1000))  # datetime (string)
+               .withColumn("datetime_str", F.from_unixtime(F.col(time_col) / 1000))  # datetime (string)
                .withColumn("datetime", F.to_timestamp(F.col('datetime_str'), 'yyyy-MM-dd HH:mm'))  # datetime (numeric)
                .select(clust_col, "datetime"))
     if k:
@@ -396,7 +394,7 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
         clust_ids = dataset.select(clust_col).distinct().collect()
 
     if save_path:
-        print("Saving time plots to: {}".format(save_path))
+        print("Saving time plot to: {}".format(save_path))
 
     for clust_id in clust_ids:
         cluster = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select("datetime")
