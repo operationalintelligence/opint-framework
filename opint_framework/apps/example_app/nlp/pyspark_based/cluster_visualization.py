@@ -143,7 +143,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
         out_cols = [original[col] for col in or_cols]
         out_cols.extend(data_cols)
 
-        dataset = original.join(dataset, original[orig_id].alias("id") == dataset[data_id],
+        dataset = original.join(dataset, original[orig_id] == dataset[data_id],
                                 how="outer").select(out_cols)
         dataset = convert_endpoint_to_site(dataset, "src_hostname", "dst_hostname")
 
@@ -385,7 +385,7 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
     import matplotlib.units as munits
 
     dataset = (dataset.filter(F.col(time_col) > 0)  # ignore null values
-               .withColumn("datetime_str", F.from_unixtime(F.col(time_col) / 1000))  # datetime (string)
+               .withColumn("datetime_str", F.from_unixtime(F.col('timestamp_tr_comp') / 1000))  # datetime (string)
                .withColumn("datetime", F.to_timestamp(F.col('datetime_str'), 'yyyy-MM-dd HH:mm'))  # datetime (numeric)
                .select(clust_col, "datetime"))
     if k:
@@ -394,7 +394,7 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
         clust_ids = dataset.select(clust_col).distinct().collect()
 
     if save_path:
-        print("Saving time plot to: {}".format(save_path))
+        print("Saving time plots to: {}".format(save_path))
 
     for clust_id in clust_ids:
         cluster = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select("datetime")
