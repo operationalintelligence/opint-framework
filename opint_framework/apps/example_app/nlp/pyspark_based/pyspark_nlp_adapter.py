@@ -4,6 +4,7 @@ from opint_framework.apps.example_app.nlp.pyspark_based.tokenization import pysp
 from opint_framework.apps.example_app.nlp.pyspark_based.vectorization import pyspark_w2v_Vectorization
 from opint_framework.apps.example_app.nlp.pyspark_based.clustering import pyspark_KM_Clustering
 from opint_framework.core.nlp.nlp import NLPAdapter
+from opint_framework.core.dataproviders.hdfs_provider import HDFSLoader
 import pyspark.sql.functions as F
 
 
@@ -65,11 +66,12 @@ class pysparkNLPAdapter(NLPAdapter):
         self.context['wrdcld'] = wrdcld
 
     def pre_process(self):
-        self.context['dataset'] = spark.read.json(
-            self.context['path_list'])  # WHY WE INTRODUCE NEW KEY? -> changed all_tranfers with dataset
+        self.context['dataset'] = HDFSLoader().pull_hdfs_json(self.context['path_list'], self.context['spark'])
+        # self.context['dataset'] = spark.read.json(
+        #     self.context['path_list'])  # WHY WE INTRODUCE NEW KEY? -> changed all_tranfers with dataset
 
         # retrieve just data
-        all_transfers = self.context['dataset']  # .select("data.*")
+        all_transfers = self.context['dataset'].select("data.*")
 
         # filter test_errors only
         test_errors = all_transfers  # .filter(all_transfers["t_final_transfer_state_flag"] == 0)
