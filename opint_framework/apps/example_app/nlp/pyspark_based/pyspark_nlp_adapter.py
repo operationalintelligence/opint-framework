@@ -74,14 +74,13 @@ class pysparkNLPAdapter(NLPAdapter):
         all_transfers = self.context['dataset'].select("data.*")
 
         # filter test_errors only
-        test_errors = all_transfers  # .filter(all_transfers["t_final_transfer_state_flag"] == 0)
+        test_errors = all_transfers.filter(all_transfers["t_final_transfer_state_flag"] == 0)
         if self.context['vo'] is not None:
-            test_errors = test_errors  # .filter(test_errors["vo"] == self.context['vo'])
+            test_errors = test_errors.filter(test_errors["vo"] == self.context['vo'])
 
         # add row id and select only relevant variables
-        test_errors = test_errors.select(#withColumn(f"{self.context['id_col']}", F.monotonically_increasing_id()).select(
-            f"{self.context['id_col']}", "t__error_message", "src_hostname", "dst_hostname",
-            f"{self.context['timestamp_tr_x']}")
+        test_errors = test_errors.select(f"{self.context['id_col']}", "t__error_message", "src_hostname",
+                                         "dst_hostname", f"{self.context['timestamp_tr_x']}")
 
         self.context['dataset'] = test_errors
 
@@ -105,8 +104,6 @@ class pysparkNLPAdapter(NLPAdapter):
         elif self.context['w2v_mode'] == "load":
             w2v_model = self.vectorization.load_model(self.context['w2v_model_path'])
             vector_data = w2v_model.transform(token_data)
-        # return(vector_data)
-        # vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
 
         # K value optimization
         res = self.clusterization.K_optim(k_list=self.context['k_list'], messages=vector_data,
