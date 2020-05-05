@@ -94,7 +94,7 @@ def pattern_summary(dataset, clust_col="prediction", tks_col="stop_token_1", abs
 
 def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs_tks_out="abstract_message",
             abs_tks_in="tokens_cleaned", abstract=True, n_mess=3, wrdcld=False,  # stats_summary
-            original=None, n_src=3, n_dst=3, src_col=None, dst_col=None, data_id="msg_id", orig_id="msg_id",
+            original=None, n_src=3, n_dst=3, src_col=None, dst_col=None, data_id="tr_id", orig_id="tr_id",
             # patterns_summary
             save_path=None, timeplot=False, time_col=None, tokenization=None
             ):
