@@ -1,6 +1,7 @@
 from opint_framework.core.nlp.nlp import Clustering
 from opint_framework.apps.example_app.nlp.pyspark_based.kmeans import *
 
+
 class pyspark_KM_Clustering(Clustering):
 
     def update_model(self, path_to_model, tokenized):
@@ -54,6 +55,7 @@ class pyspark_KM_Clustering(Clustering):
         silhouette = evaluator.evaluate(model_fit.summary.predictions)
 
         if log_path:
+            log_path = "{}/K-Means_optimization.txt".format(log_path)
             log_path = Path(log_path)
             log_path.parent.mkdir(parents=True, exist_ok=True)
             print("Saving training metrics to: {}".format(log_path))
@@ -116,13 +118,13 @@ class pyspark_KM_Clustering(Clustering):
         from pathlib import Path
         from multiprocessing.pool import ThreadPool
 
-        messages = self.data_preparation(messages, tks_vec) #kmeans_preproc(messages, tks_vec)
+        messages = self.data_preparation(messages, tks_vec)  # kmeans_preproc(messages, tks_vec)
 
         if n_cores > 1:
             pool = ThreadPool(n_cores)
             models_k = pool.map(lambda k: self.train_model(messages, ft_col=ft_col, k=k, distance=distance,
-                                                       initSteps=initSteps, tol=tol, maxIter=maxIter,
-                                                       log_path=log_path), k_list)
+                                                           initSteps=initSteps, tol=tol, maxIter=maxIter,
+                                                           log_path=log_path), k_list)
             clustering_models = [k_dict["model"] for k_dict in models_k]
             wsse = [k_dict["wsse"] for k_dict in models_k]
             silhouette = [k_dict["asw"] for k_dict in models_k]
@@ -138,7 +140,8 @@ class pyspark_KM_Clustering(Clustering):
                 print("Started at: {}\n".format(start_time_string))
 
                 model_k = self.clusterization.train_kmeans(messages, ft_col=ft_col, k=k, distance="cosine",
-                                       initSteps=initSteps, tol=tol, maxIter=maxIter, log_path=log_path)
+                                                           initSteps=initSteps, tol=tol, maxIter=maxIter,
+                                                           log_path=log_path)
 
                 print("\nTime elapsed: {} minutes and {} seconds.".format(int((time.time() - start_time) / 60),
                                                                           int((time.time() - start_time) % 60)))

@@ -105,13 +105,14 @@ class pysparkNLPAdapter(NLPAdapter):
             w2v_model = self.vectorization.load_model(self.context['w2v_model_path'])
             vector_data = w2v_model.transform(token_data)
 
+        # self.context['w2v_uid'] = str(w2v_model)
         # K value optimization
         res = self.clusterization.K_optim(k_list=self.context['k_list'], messages=vector_data,
                                           tks_vec=self.context['tks_vec'],
                                           ft_col=self.context['ft_col'], distance=self.context['distance'],
                                           initSteps=self.context['opt_initSteps'], tol=self.context['opt_tol'],
                                           maxIter=self.context['opt_maxIter'], n_cores=self.context['n_cores'],
-                                          log_path="{}/K-Means_optimization.txt".format(self.context['log_path']))
+                                          log_path=self.context['log_path'])
 
         k_sil = get_k_best(res, "silhouette")
 
@@ -125,7 +126,8 @@ class pysparkNLPAdapter(NLPAdapter):
         #         else:
         #             save_mode = "new"
         else:
-            kmeans_model_path = None
+            # kmeans_model_path = None
+            kmeans_model_path = self.context['kmeans_model_path']
             save_mode = "new"
 
         if self.context['log_path']:
