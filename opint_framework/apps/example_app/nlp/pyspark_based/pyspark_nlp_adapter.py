@@ -105,7 +105,7 @@ class pysparkNLPAdapter(NLPAdapter):
             w2v_model = self.vectorization.load_model(self.context['w2v_model_path'])
             vector_data = w2v_model.transform(token_data)
 
-        # self.context['w2v_uid'] = str(w2v_model)
+        self.context['w2v_uid'] = str(w2v_model)
         # K value optimization
         res = self.clusterization.K_optim(k_list=self.context['k_list'], messages=vector_data,
                                           tks_vec=self.context['tks_vec'],
@@ -146,6 +146,7 @@ class pysparkNLPAdapter(NLPAdapter):
                                                        path_to_model=kmeans_model_path, mode=save_mode,
                                                        log_path=best_k_log_path)
 
+        self.context['kmeans_uid'] = str(kmeans_model["model"])
         return (kmeans_model)
 
     def post_process(self, model, test_predictions=None):
