@@ -143,7 +143,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
         out_cols = [original[col] for col in or_cols]
         out_cols.extend(data_cols)
 
-        dataset = original.join(dataset, original[orig_id] == dataset[data_id],
+        dataset = original.join(dataset, original[orig_id].alias("id") == dataset[data_id],
                                 how="outer").select(out_cols)
         dataset = convert_endpoint_to_site(dataset, "src_hostname", "dst_hostname")
 
