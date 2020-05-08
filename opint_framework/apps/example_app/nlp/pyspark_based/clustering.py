@@ -120,6 +120,8 @@ class pyspark_KM_Clustering(Clustering):
 
         messages = self.data_preparation(messages, tks_vec)  # kmeans_preproc(messages, tks_vec)
 
+        print("\nSelecting best number of clusters\n", "--" * 30,"\n")
+
         if n_cores > 1:
             pool = ThreadPool(n_cores)
             models_k = pool.map(lambda k: self.train_model(messages, ft_col=ft_col, k=k, distance=distance,

@@ -61,7 +61,7 @@ class pysparkTokenization(Tokenization):
 
         return (token_data)
 
-    def detokenize_messages(self, tokenized, tks_col):
+    def detokenize_messages(self, tokenized, tks_col, out_detoken_col):
         """Takes pyspark dataframe \"tokenized\" where \"err_col\" contains list of tokens
         and return a dataframe with the additional \"message_string\" column where tokens are joint back.
         """
@@ -73,7 +73,7 @@ class pysparkTokenization(Tokenization):
         detokenize_udf = udf(lambda entry: " ".join(entry), StringType())
 
         # detokenize
-        tokenized = tokenized.withColumn("message_string", detokenize_udf(tks_col))
+        tokenized = tokenized.withColumn(out_detoken_col, detokenize_udf(tks_col))
 
         return(tokenized)
 

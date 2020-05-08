@@ -96,7 +96,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
             abs_tks_in="tokens_cleaned", abstract=True, n_mess=3, wrdcld=False,  # stats_summary
             original=None, n_src=3, n_dst=3, src_col=None, dst_col=None, data_id="tr_id", orig_id="tr_id",
             # patterns_summary
-            save_path=None, timeplot=False, time_col=None, tokenization=None
+            save_path=None, timeplot=False, time_col=None, tokenization=None, model_ref=None
             ):
     """Return summary statistics aggregated per cluster.
 
@@ -131,10 +131,15 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
     # from opint_framework.apps.example_app.nlp.pyspark_based.tokenization import abstract_params
     from pathlib import Path
 
+    # rename tokens and  detokenized abstract column in the output
+    out_tks_col = "tokens"
+    detoken_out_abs_col = "pattern"
+
     pd.options.mode.chained_assignment = 'raise'
     # compute quantitative stats of the clusters
     if abstract:
         dataset = tokenization.abstract_params(dataset, tks_col=abs_tks_in, out_col=abs_tks_out)
+        dataset = tokenization.detokenize_messages(dataset, abs_tks_out, detoken_out_abs_col)
 
     if original:
         or_cols = original.columns
@@ -148,30 +153,63 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
         dataset = convert_endpoint_to_site(dataset, "src_hostname", "dst_hostname")
 
     if timeplot:
-        plot_time(dataset, time_col=time_col, clust_col=clust_col, k=k, save_path="{}/timeplot".format(save_path))
+        plot_time(dataset, time_col=time_col, clust_col=clust_col, k=k, save_path="{}/plots/timeplot".format(save_path))
+
+    # tokens cloud
+    if wrdcld:
+        tokens_cloud(dataset, msg_col=abs_tks_out, clust_col=clust_col, save_path="{}/plots/token_clouds".format(save_path))
+
+
+    # add model reference column and UUID for cluster label
+    import uuid
+    UUID_dict = {}
+
+    if k is None:
+        k = dataset.prediction.countDistinct()
+
+    for i in range(k):
+        UUID_dict[i] = str(uuid.uuid4())
+
+    def uuid_str(clust_label, UUID_dict=UUID_dict):
+        uuid = UUID_dict.get(clust_label, None)
+        return (uuid)
+
+    model_ref_udf = F.udf(lambda: model_ref, StringType())
+    uuid_udf = F.udf(uuid_str, StringType())
+    dataset = dataset.withColumn("model_ref", model_ref_udf()).withColumn("clust_UUID", uuid_udf(clust_col))
+
+    dataset.select("prediction", "clust_UUID").distinct().show()
+
+    # save raw prediction dataset
+
+    import datetime
+    date_hdfs_format = str(datetime.date.today()).replace("-", "/")
+    save_path = save_path + "/{}".format(date_hdfs_format)
+
+    print("Saving raw prediction dataset to: {}/raw".format(save_path))
+
+    if abstract:
+        dataset = dataset.select(data_id, "t__error_message", F.col(tks_col).alias(out_tks_col), detoken_out_abs_col, src_col, dst_col, time_col,
+                                 clust_col, "clust_UUID", "model_ref")
+    else:
+        dataset = dataset.select(data_id, "t__error_message", F.col(tks_col).alias(out_tks_col), src_col, dst_col, time_col,
+                                 clust_col, "clust_UUID", "model_ref")
+    dataset.write.format('json').mode('overwrite').save("{}/raw".format(save_path))
+
     # first compute quantitative stats of the clusters
-    stats = stats_summary(dataset, clust_col=clust_col, tks_col=tks_col, abs_tks_out=abs_tks_out, abstract=abstract)
+    stats = stats_summary(dataset, clust_col=clust_col, tks_col=out_tks_col, abs_tks_out=detoken_out_abs_col, abstract=abstract)
 
     # second extract top N most frequent patterns
-    patterns = pattern_summary(dataset, clust_col=clust_col, tks_col=tks_col, abs_tks_out=abs_tks_out,
+    patterns = pattern_summary(dataset, clust_col=clust_col, tks_col=out_tks_col, abs_tks_out=detoken_out_abs_col,
                                abstract=abstract, n_mess=n_mess, original=original,
-                               n_src=n_src, n_dst=n_dst, src_col=src_col, dst_col=dst_col, save_path=save_path,
-                               tokenization=tokenization)
+                               n_src=n_src, n_dst=n_dst, src_col=src_col, dst_col=dst_col, save_path=save_path)
+    print(stats.columns, patterns.columns)
 
     summary_df = stats.join(patterns, on=clust_col, how="full").orderBy(F.col("n_messages").desc(),
                                                                         clust_col, "rank_pattern")
 
     # add model reference column and UUID for cluster label
-    def model_ref():
-        return ("pyspark_based")
-
-    def uuid_str():
-        import uuid
-        return (str(uuid.uuid4()))
-
-    model_ref_udf = F.udf(model_ref, StringType())
-    uuid_udf = F.udf(uuid_str, StringType())
-    summary_df = summary_df.withColumn("model_ref", model_ref_udf()).withColumn("clust_UUID", uuid_udf())
+    summary_df = summary_df.withColumn("model_ref", model_ref_udf()).withColumn("clust_UUID", uuid_udf(clust_col))
 
     # reorder columns
     cols = [summary_df.columns[-1]] + summary_df.columns[:-1]
@@ -180,16 +218,14 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
     if save_path:
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
-        outname = save_path / "summary.json"  # .format(clust_id[clust_col])
+        outname = save_path / "aggregate/summary.json"  # .format(clust_id[clust_col])
         print("Saving clustering summary to: {}".format(outname))
         save_to_json(summary_df, save_path=outname)
 
     # transform to pandas
     summary_df = summary_df.toPandas().set_index([clust_col, "rank_pattern"])
 
-    # tokens cloud
-    if wrdcld:
-        tokens_cloud(dataset, msg_col=abs_tks_out, clust_col=clust_col, save_path="{}/token_clouds".format(save_path))
+
     return (dataset, summary_df)
 
 
@@ -229,7 +265,7 @@ def stats_pattern(dataset, clust_col, agg_col_in, agg_col_out, n_rank, save_path
         grouped_patterns = grouped_patterns.withColumnRenamed("message_string", "pattern").select(cols)
 
     if save_path:
-        outname = "{}/{}_aggregate_summary.json".format(save_path, agg_col_label)
+        outname = "{}/aggregate/{}_aggregate_summary.json".format(save_path, agg_col_label)
         print("Saving {} aggregate summary to: {}".format(agg_col_label, outname))
         save_to_json(grouped_patterns, save_path=outname)
 
@@ -307,9 +343,8 @@ def tokens_cloud(dataset, msg_col, clust_col="prediction", save_path=None,
         # Display the generated image:
         fig = plt.figure(figsize=figsize)
         plt.title("CLUSTER {}".format(clust_id[clust_col]))
-        plt.imshow(wordcloud, interpolation='bilinear')
         plt.axis("off")
-        plt.show()
+        plt.imshow(wordcloud, interpolation='bilinear')
         if save_path:
             save_path = Path(save_path)
             save_path.mkdir(parents=True, exist_ok=True)
@@ -385,7 +420,7 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
     import matplotlib.units as munits
 
     dataset = (dataset.filter(F.col(time_col) > 0)  # ignore null values
-               .withColumn("datetime_str", F.from_unixtime(F.col('timestamp_tr_comp') / 1000))  # datetime (string)
+               .withColumn("datetime_str", F.from_unixtime(F.col(time_col) / 1000))  # datetime (string)
                .withColumn("datetime", F.to_timestamp(F.col('datetime_str'), 'yyyy-MM-dd HH:mm'))  # datetime (numeric)
                .select(clust_col, "datetime"))
     if k:

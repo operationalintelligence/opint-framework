@@ -21,7 +21,6 @@ class pysparkNLPAdapter(NLPAdapter):
                  tr_initSteps=200, tr_tol=0.000001, tr_maxIter=100,  ## train_kmeans
                  clust_col="prediction", timeplot=False, wrdcld=False  # visualization)
                  ):
-        # self.context = {}
 
         super(pysparkNLPAdapter, self).__init__(name="PySpark_adapter"  # ,
                                                 # tokenization=self.tokenization,
@@ -67,8 +66,6 @@ class pysparkNLPAdapter(NLPAdapter):
 
     def pre_process(self):
         self.context['dataset'] = HDFSLoader().pull_hdfs_json(self.context['path_list'], self.context['spark'])
-        # self.context['dataset'] = spark.read.json(
-        #     self.context['path_list'])  # WHY WE INTRODUCE NEW KEY? -> changed all_tranfers with dataset
 
         # retrieve just data
         all_transfers = self.context['dataset'].select("data.*")
@@ -91,6 +88,7 @@ class pysparkNLPAdapter(NLPAdapter):
         token_data = self.tokenization.tokenize_messages()
 
         if self.context['w2v_mode'] == "train":
+            print("\nTraining Word2Vec model\n", "--" * 30, "\n")
             w2v_model = self.vectorization.train_model(token_data, path_to_model=self.context['w2v_model_path'],
                                                        tks_col=self.context['tks_col'],
                                                        id_col=self.context['id_col'], out_col=self.context['tks_vec'],
@@ -102,10 +100,13 @@ class pysparkNLPAdapter(NLPAdapter):
             vector_data = w2v_model.transform(token_data)
 
         elif self.context['w2v_mode'] == "load":
+            print("\nLoading Word2Vec model\n", "--" * 30)
             w2v_model = self.vectorization.load_model(self.context['w2v_model_path'])
             vector_data = w2v_model.transform(token_data)
 
+        # add w2v uid to context
         self.context['w2v_uid'] = str(w2v_model)
+
         # K value optimization
         res = self.clusterization.K_optim(k_list=self.context['k_list'], messages=vector_data,
                                           tks_vec=self.context['tks_vec'],
@@ -139,13 +140,14 @@ class pysparkNLPAdapter(NLPAdapter):
         vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
 
         # train best K
+        print("\nTraining K-Means model for best value of K\n", "--" * 30, "\n")
         kmeans_model = self.clusterization.train_model(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil,
                                                        distance=self.context['distance'],
                                                        initSteps=self.context['tr_initSteps'],
                                                        tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
                                                        path_to_model=kmeans_model_path, mode=save_mode,
                                                        log_path=best_k_log_path)
-
+        # add kmeans uid to context
         self.context['kmeans_uid'] = str(kmeans_model["model"])
         return (kmeans_model)
 
@@ -174,15 +176,17 @@ class pysparkNLPAdapter(NLPAdapter):
                                                            pred_mode=self.context['pred_mode'],
                                                            # new_cluster_thresh=None, update_model_path=kmeans_model_path--> need to be defined
                                                            )
-        abs_dataset, summary = summary(dataset=test_predictions, k=best_k, data_id=self.context['id_col'], orig_id=self.context['id_col'],
+        abs_dataset, summary = summary(dataset=test_predictions, k=best_k, data_id=self.context['id_col'],
+                                       orig_id=self.context['id_col'],
                                        clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
                                        abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
                                        abstract=True, n_mess=None, wrdcld=self.context['wrdcld'],
                                        original=self.context['dataset'], src_col="src_hostname", n_src=None,
                                        dst_col="dst_hostname", n_dst=None, timeplot=self.context['timeplot'],
                                        time_col=self.context['timestamp_tr_x'],
-                                       save_path="results/sample_app/K={}".format(best_k),
-                                       tokenization=self.tokenization)
+                                       save_path="{}/K={}".format(self.context['kmeans_model_path'], best_k),
+                                       tokenization=self.tokenization,
+                                       model_ref="{}_{}".format(self.context['w2v_uid'], self.context['kmeans_uid']))
         return (summary)
 
     def execute(self):
