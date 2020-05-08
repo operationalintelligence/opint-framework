@@ -178,10 +178,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
     uuid_udf = F.udf(uuid_str, StringType())
     dataset = dataset.withColumn("model_ref", model_ref_udf()).withColumn("clust_UUID", uuid_udf(clust_col))
 
-    dataset.select("prediction", "clust_UUID").distinct().show()
-
     # save raw prediction dataset
-
     import datetime
     date_hdfs_format = str(datetime.date.today()).replace("-", "/")
     save_path = save_path + "/{}".format(date_hdfs_format)
@@ -203,7 +200,6 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
     patterns = pattern_summary(dataset, clust_col=clust_col, tks_col=out_tks_col, abs_tks_out=detoken_out_abs_col,
                                abstract=abstract, n_mess=n_mess, original=original,
                                n_src=n_src, n_dst=n_dst, src_col=src_col, dst_col=dst_col, save_path=save_path)
-    print(stats.columns, patterns.columns)
 
     summary_df = stats.join(patterns, on=clust_col, how="full").orderBy(F.col("n_messages").desc(),
                                                                         clust_col, "rank_pattern")
