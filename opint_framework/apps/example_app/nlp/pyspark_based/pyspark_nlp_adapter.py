@@ -184,7 +184,7 @@ class pysparkNLPAdapter(NLPAdapter):
                                        original=self.context['dataset'], src_col="src_hostname", n_src=None,
                                        dst_col="dst_hostname", n_dst=None, timeplot=self.context['timeplot'],
                                        time_col=self.context['timestamp_tr_x'],
-                                       save_path="{}/K={}".format(self.context['kmeans_model_path'], best_k),
+                                       save_path=self.context["kmeans_model_path"],
                                        tokenization=self.tokenization,
                                        model_ref="{}_{}".format(self.context['w2v_uid'], self.context['kmeans_uid']))
         return (summary)

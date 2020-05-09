@@ -1,3 +1,11 @@
+def join_strings_to_path(base, end):
+    import os
+    if base is None:
+        base = os.getcwd()
+    if end is None:
+        end = os.getcwd()
+    return("{}/{}".format(base, end))
+
 def stats_summary(dataset, clust_col="prediction", tks_col="stop_token_1", abs_tks_out="abstract_message",
                   abstract=True):
     """Compute frequencies of unique messages aggregated per cluster.
@@ -153,12 +161,13 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
         dataset = convert_endpoint_to_site(dataset, "src_hostname", "dst_hostname")
 
     if timeplot:
-        plot_time(dataset, time_col=time_col, clust_col=clust_col, k=k, save_path="{}/plots/timeplot".format(save_path))
+        timeplot_path = join_strings_to_path(save_path, "plot/timeplot")
+        plot_time(dataset, time_col=time_col, clust_col=clust_col, k=k, save_path=timeplot_path)
 
     # tokens cloud
     if wrdcld:
-        tokens_cloud(dataset, msg_col=abs_tks_out, clust_col=clust_col, save_path="{}/plots/token_clouds".format(save_path))
-
+        wrdcld_path = join_strings_to_path(save_path, "plots/tokens_clouds")
+        tokens_cloud(dataset, msg_col=abs_tks_out, clust_col=clust_col, save_path=wrdcld_path)
 
     # add model reference column and UUID for cluster label
     import uuid
@@ -181,8 +190,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
     # save raw prediction dataset
     import datetime
     date_hdfs_format = str(datetime.date.today()).replace("-", "/")
-    save_path = save_path + "/{}".format(date_hdfs_format)
-
+    save_path = join_strings_to_path(save_path, date_hdfs_format)
     print("Saving raw prediction dataset to: {}/raw".format(save_path))
 
     if abstract:
@@ -214,10 +222,10 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
     if save_path:
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
-        outname = save_path / "aggregate/summary.json"  # .format(clust_id[clust_col])
-        print("Saving clustering summary to: {}".format(outname))
-        save_to_json(summary_df, save_path=outname)
-
+        outpath = save_path / "aggregate/summary"  # .format(clust_id[clust_col])
+        print("Saving clustering summary to HDFS: {}".format(outpath))
+        # save_to_json(summary_df, save_path=outpath)
+        summary_df.write.format('json').mode('overwrite').save("{}".format(outpath))
     # transform to pandas
     summary_df = summary_df.toPandas().set_index([clust_col, "rank_pattern"])
 
@@ -261,10 +269,10 @@ def stats_pattern(dataset, clust_col, agg_col_in, agg_col_out, n_rank, save_path
         grouped_patterns = grouped_patterns.withColumnRenamed("message_string", "pattern").select(cols)
 
     if save_path:
-        outname = "{}/aggregate/{}_aggregate_summary.json".format(save_path, agg_col_label)
-        print("Saving {} aggregate summary to: {}".format(agg_col_label, outname))
-        save_to_json(grouped_patterns, save_path=outname)
-
+        outpath = "{}/aggregate/{}_aggregate_summary".format(save_path, agg_col_label)
+        print("Saving {} aggregate summary to HDFS: {}".format(agg_col_label, outpath))
+        # save_to_json(grouped_patterns, save_path=outname)
+        grouped_patterns.write.format('json').mode('overwrite').save(outpath)
     return (grouped_patterns)
 
 
@@ -430,6 +438,10 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
     for clust_id in clust_ids:
         cluster = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select("datetime")
         #         cluster = cluster.groupBy("datetime").agg(F.count("datetime").alias("freq")).orderBy("datetime", ascending=True)
+        if save_path:
+            outpath = "{}/cluster_{}".format(save_path, clust_id[clust_col])
+
+            cluster.write.format('json').mode('overwrite').save(outpath)
         cluster = cluster.toPandas()
 
         try:
@@ -459,10 +471,10 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
         if save_path:
             save_path = Path(save_path)
             save_path.mkdir(parents=True, exist_ok=True)
-            outname = save_path / "cluster_{}.png".format(clust_id[clust_col])
+            outpath = save_path / "cluster_{}.png".format(clust_id[clust_col])
             # print("Saving time plots to: {}".format(outname))
-            if os.path.isfile(outname):
-                os.remove(outname)
-            fig.savefig(outname, format='png', bbox_inches='tight')
+            if os.path.isfile(outpath):
+                os.remove(outpath)
+            fig.savefig(outpath, format='png', bbox_inches='tight')
         else:
             plt.show()
