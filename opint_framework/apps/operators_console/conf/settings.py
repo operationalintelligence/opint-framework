@@ -12,4 +12,11 @@ POLLING_TIME = {
 #The deployment setting which activate/deactivate all agents executing in the app
 ENABLE_SCHEDULER = True
 
-API_PREFIX = "example_app/api"
+API_PREFIX = "ops_console/api"
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'dev.sqlite3'
+    }
+}

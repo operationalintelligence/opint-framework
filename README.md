@@ -5,70 +5,64 @@
 OpInt Framework.
 
 ## Installation
+There are 3 options for the Framework installation:
+1. Minimal, required only for running Jupyter notebooks supplied with example applications.
+2. Backend service intended for running agents. 
+3. REST service for Web deployment
 
-Fork the repo into your personal project and clone the project.
+Any installation scenario starts from getting the source code:
 ```commandline
-cd ~/projects/opint-framework/
 git clone https://github.com/operationalintelligence/opint-framework
 ```
+Assuming that [Jupyter notebook is pre installed](https://jupyter.org/install) on the target system, notebooks could be 
+ready to run. If a notebook needs extra dependency they could be installed in a standard manned depending on what 
+package manager you are using (conda or pip).   
 
 Create a new python3 virtual environment and activate it:
 ```commandline
-virtualenv -p python3 ~/environments/opint-framework
-source ~/environments/opint-framework/bin/activate
+python3 -m venv ./virtenv
+source ./virtenv/bin/activate
 ```
 
+Install the global (minimal) framework requirements:  
+```commandline
+pip install -r ./opint-framework/requirements.txt
+``` 
 
-Install Python dependencies:
+_(optional)_ Depending on the usage scenario ones may want to install requirements for specific deployment and application intended to use, e.g:
+```commandline
+pip install -r ./opint-framework/opint_framework/apps/workload_jobsbuster/requirements.txt
+```
+
+The following two lines are needed to supply paths and settings to Django:
+```commandline
+export PYTHONPATH=$(pwd)/opint-framework
+export DJANGO_SETTINGS_MODULE=opint_framework.conf.settings
+```
+
+**At this point the agents could be executed:**
+```commandline
+python3 opint-framework/opint_framework/core/scheduler/mainlooper.py
+``` 
+
+If installation passed successfully, the following message will be displayed:
+```commandline
+Hello World from Sample Agent
+``` 
+and then FrameWork exits. To activate the infinite loop mode, when agents periodically called, 
+the following parameter in the opint-framework/opint_framework/conf/settings.py
+```commandline
+DO_DEBUG_AGENTS = True
+``` 
+
+If the Operational Intelligence framework will be used for providing REST services, the Django dependencies should be also installed: 
 ```commandline
 cd ~/projects/opint-framework/opint-framework
 pip install -r requirements.txt
 ``` 
 
-Export settings module:
-```commandline
-export DJANGO_SETTINGS_MODULE='opint_framework.conf.settings'
-```
-
 The following environmental variables can be set:
-```commandline
-API_KEY: The key for Monit Grafana's API
-DB_PASS: The pass for the produciton database.
-For Development you can enable sqlite populating the MODE env variable:
-export MODE=dev 
-```
-Create DB:
-```commandline
-python manage.py makemigrations core data_management workload_jobsbuster users api
-python manage.py migrate
-```
-
-Populate DB with initial data: (Currently deprecated. Data should be ported to the new models.)
-```commandline
-python manage.py loaddata initial
-```
-
-## Running the app:
-Navigate to the project's directory:
-```commandline
-cd ~/projects/opint-framework
-```
 Run the django server:
 ```commandline
-python manage.py runserver
-```
-
-## Fetching information: (Currently deprecated. To be ported to new Scheduler paradigm)
-In order to fetch issues from HDFS:
-```commandline
-python manage.py hdfs_loader_cron
-```
-For a specific date:
-```commandline
-python manage.py hdfs_loader_cron --date=12/1/2019
-```
-
-In order to fetch issues from Monit-Grafana ES API:
-```commandline
-python manage.py rucio_loader_cron
+python3 opint-framework/manage.py runserver
 ```

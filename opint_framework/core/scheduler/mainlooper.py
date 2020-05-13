@@ -8,7 +8,7 @@ from importlib import util as importutil
 from django.conf import settings
 from opint_framework.core.utils.common import getAgentsShedule
 from opint_framework.core.prototypes.BaseAgent import BaseAgent
-from opint_framework.conf.settings import DO_DEBUG_AGENTS, DATABASES
+from opint_framework.conf.settings import DO_DEBUG_AGENTS
 import django
 django.setup()
 
@@ -45,7 +45,7 @@ def main():
     if DO_DEBUG_AGENTS:
         schedule.run_all()
         for t in threading.enumerate():
-            if t.daemon and not 'pydevd.' in  t.getName():
+            if t.daemon and 'pydevd.' not in t.getName():
                 t.join()
         return 0
     else:

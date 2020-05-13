@@ -1,5 +1,5 @@
 # General activation flag
-IS_ACTIVATED = True
+IS_ACTIVATED = False
 
 #The deployment setting which activate/deactivate all agents executing in the app
 ENABLE_SCHEDULER = True
@@ -12,3 +12,11 @@ POLLING_TIME = {
 }
 
 API_PREFIX = "ddm/api"
+
+DATABASES = {
+    'default': {},
+    'rucio_opint': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'rucio_opint',
+    }
+}
