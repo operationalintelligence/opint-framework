@@ -230,48 +230,40 @@ class JobsAnalyserAgent(BaseAgent):
             return text
         frame[diagfield] = frame[diagfield].apply(replace_all)
 
+    def analyseProblem(self, frame):
+        subsample_error_segment = frame.copy()
+        subsample_col = subsample_error_segment.filter(['COMPUTINGSITE'], axis=1)
+        COMPUTINGSITE_COLS = pd.get_dummies(subsample_col, prefix=['COMPUTINGSITE'])
+        subsample_col = subsample_error_segment.filter(['DESTINATIONSE'], axis=1)
+        DESTINATIONSE_COLS = pd.get_dummies(subsample_col, prefix=['DESTINATIONSE'])
+        subsample_col = subsample_error_segment.filter(['JEDITASKID'], axis=1)
+        JEDITASKID_COLS = pd.get_dummies(subsample_col, prefix=['JEDITASKID'])
+        subsample_col = subsample_error_segment.filter(['COMPUTINGELEMENT'], axis=1)
+        COMPUTINGELEMENT_COLS = pd.get_dummies(subsample_col, prefix=['COMPUTINGELEMENT'])
+        subsample_col = subsample_error_segment.filter(['CREATIONHOST'], axis=1)
+        CREATIONHOST_COLS = pd.get_dummies(subsample_col, prefix=['CREATIONHOST'])
+        subsample_col = subsample_error_segment.filter(['NUCLEUS'], axis=1)
+        NUCLEUS_COLS = pd.get_dummies(subsample_col, prefix=['NUCLEUS'])
+        subsample_col = subsample_error_segment.filter(['REQID'], axis=1)
+        REQID_COLS = pd.get_dummies(subsample_col, prefix=['REQID'])
+        subsample_col = subsample_error_segment.filter(['PRODUSERNAME'], axis=1)
+        PRODUSERNAME_COLS = pd.get_dummies(subsample_col, prefix=['PRODUSERNAME'])
+        XDF = pd.concat(
+            [COMPUTINGSITE_COLS, DESTINATIONSE_COLS, JEDITASKID_COLS, COMPUTINGELEMENT_COLS, CREATIONHOST_COLS,
+             NUCLEUS_COLS, REQID_COLS], axis=1)
+        YDF = subsample_error_segment.filter(['JOBSTATUS'], axis=1)
 
-    def analyseProblem(self, frame_loc, hashval):
-        newframe_r_X = frame_loc.copy()
-
-        del newframe_r_X['PANDAID']
-        del newframe_r_X['STARTTIME']
-        del newframe_r_X['ENDTIME']
-        del newframe_r_X['LOSTWALLTIME']
-        del newframe_r_X['JOBSTATUS']
-        del newframe_r_X['ISSUCCESS']
-        del newframe_r_X['ISFAILED']
-        del newframe_r_X['BROKERAGEERRORCODE']
-        del newframe_r_X['BROKERAGEERRORDIAG']
-        del newframe_r_X['DDMERRORCODE']
-        del newframe_r_X['DDMERRORDIAG']
-        del newframe_r_X['EXEERRORCODE']
-        del newframe_r_X['EXEERRORDIAG']
-        del newframe_r_X['JOBDISPATCHERERRORCODE']
-        del newframe_r_X['JOBDISPATCHERERRORDIAG']
-        del newframe_r_X['PILOTERRORCODE']
-        del newframe_r_X['PILOTERRORDIAG']
-        del newframe_r_X['SUPERRORCODE']
-        del newframe_r_X['SUPERRORDIAG']
-        del newframe_r_X['TASKBUFFERERRORCODE']
-        del newframe_r_X['TASKBUFFERERRORDIAG']
-        del newframe_r_X['TRANSEXITCODE']
-        del newframe_r_X['combinederrors']
-
-        categorical_features_indices = list(np.where((newframe_r_X.dtypes == np.object))[0])
-        newframe_r_Y = frame_loc['combinederrors'].apply(lambda x: 0 if x and x == hashval else 1)
-
-        X_train, X_validation, y_train, y_validation = train_test_split(newframe_r_X, newframe_r_Y, train_size=0.85,
+        X_train, X_validation, y_train, y_validation = train_test_split(XDF, YDF, train_size=0.90,
                                                                         random_state=42)
-        train_pool = Pool(X_train, label=y_train, cat_features=categorical_features_indices)
-        validate_pool = Pool(X_validation, label=y_validation, cat_features=categorical_features_indices)
+        train_pool = Pool(X_train, label=y_train)
+        validate_pool = Pool(X_validation, label=y_validation)
 
         with tempfile.TemporaryDirectory() as tmpdirname:
             model = CatBoostClassifier(
                 iterations=200,
                 random_seed=2,
                 logging_level='Silent',
-                depth=5,
+                depth=1,
                 learning_rate=0.01,
                 task_type="CPU",
                 train_dir=tmpdirname,
@@ -286,7 +278,56 @@ class JobsAnalyserAgent(BaseAgent):
             feature_names = X_train.columns
             interactions = model.get_feature_importance(train_pool, fstr_type=EFstrType.Interaction, prettified=True)
             del model
+
         return (feature_names, feature_importances, interactions, X_train.columns)
+
+
+    def convertFeaturesImportances(self, feat_impts):
+        retList = []
+        for feat_imp in feat_impts:
+            importance = feat_imp[0]
+            feature = feat_imp[1].split('_')[0]
+            value = feat_imp[1][len(feature) + 1:]
+            retList.append((feature, value, importance))
+        return retList
+
+
+    def createOrthogonalSets(self, frame_loc, features):
+        combinations = []
+        cathegories = list([feature[0] for feature in features])
+        picked = []
+        for i, _ in enumerate(cathegories):
+            if i not in picked:
+                compbination_not_found = True
+                for j in range(i + 1, len(cathegories)):
+                    if j not in picked:
+                        assessment = self.probeMask(frame_loc, [features[i], features[j]])
+                        if assessment and assessment[0] > 0:
+                            picked.append(j)
+                            combinations.append([features[i], features[j]])
+                            compbination_not_found = False
+                if compbination_not_found:
+                    assessment = self.probeMask(frame_loc, [features[i]])
+                    if assessment and assessment[0] > 0:
+                        combinations.append([features[i]])
+        return combinations
+
+
+    def probeMask(self, frame_loc, filters):
+        mask = True
+        featuresList = []
+        for filt in filters:
+            # print(filt)
+            mask = mask & (frame_loc[filt[0]] == filt[1])
+            featuresList.append(filt[0])
+        totals = frame_loc.loc[mask].groupby(list(set(featuresList))).agg(
+            {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum', }).reset_index()
+        if len(totals.index) == 0:
+            return None
+        # print(totals.head())
+        return (totals['ISFAILED'][totals.index[0]],
+                totals['ISSUCCESS'][totals.index[0]],
+                totals['LOSTWALLTIME'][totals.index[0]])
 
 
     class IssueDescriptor(object):
@@ -319,43 +360,60 @@ class JobsAnalyserAgent(BaseAgent):
         # We count statistics of failed jobs associated with the problem and return correspondent object
 
         freq = self.errFrequency.loc[self.errFrequency['combinederrors'] == hashval].iloc[0]
-        mask = (frame_loc['ENDTIME'] >= freq['ENDTIME']['min']) & (frame_loc['ENDTIME'] <= freq['ENDTIME']['max']) & ((frame_loc['combinederrors'] == hashval) | (frame_loc['ISFAILED'] == 0))
+
+        mask_f = (frame_loc['ENDTIME'] >= freq['ENDTIME']['min']) & (frame_loc['ENDTIME'] <= freq['ENDTIME']['max']) & (
+                    frame_loc['combinederrors'] == hashval)
+        mask_s = (frame_loc['ENDTIME'] >= freq['ENDTIME']['min'] - datetime.timedelta(minutes=10)) & (
+                    frame_loc['ENDTIME'] <= freq['ENDTIME']['max'] + datetime.timedelta(minutes=10)) & (
+                             frame_loc['JOBSTATUS'] == 'finished')
+
         try:
-            (feature_names, feature_importances, interactions, X_tr_col) = self.analyseProblem(frame_loc.loc[mask], hashval)
+            (feature_names, feature_importances, interactions, X_tr_col) = self.analyseProblem(frame_loc.loc[mask_f | mask_s])
         except:
             return None
-        feature_importances = filter(lambda x: x[0] > 10, zip(feature_importances, feature_names))
-        featuresLists = []
-        featuresLists.extend([x[1] for x in feature_importances])
-        if len(featuresLists) > 0:
-            groups = frame_loc.loc[mask].groupby(featuresLists).agg(
-                {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
-                 'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False)
-        else:
-            return None
+        feature_importances = list(filter(lambda x: x[0] > 10, zip(feature_importances, feature_names)))
+        feature_importances = self.convertFeaturesImportances(feature_importances)
+        feature_importances = self.createOrthogonalSets(frame_loc.loc[mask_f | mask_s], feature_importances)
+        # feature_importances.sort(key=lambda x: x[2], reverse=True)
+        # print(feature_importances)
+        issues = []
+        for features in feature_importances:
+            featuresList = []
+            for filt in features:
+                featuresList.append(filt[0])
+            if len(featuresList) > 0:
+                mask = mask_f | mask_s
+                for feature in features:
+                    mask = mask & (frame_loc[filt[0]] == filt[1])
+                groups = frame_loc.loc[mask].groupby(featuresList).agg(
+                    {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
+                     'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False)
 
-        foundIssue = self.IssueDescriptor()
-        foundIssue.features = {feature: groups[feature][groups.index[0]] for feature in featuresLists}
-        foundIssue.nFailedJobs = groups[('ISFAILED', 'sum')][groups.index[0]]
-        foundIssue.nSuccessJobs = groups[('ISSUCCESS', 'sum')][groups.index[0]]
-        foundIssue.lostWallTime = groups[('LOSTWALLTIME', 'sum')][groups.index[0]]
-        starttime = groups[('ENDTIME', 'min')][groups.index[0]]
-        endtime = groups[('ENDTIME', 'max')][groups.index[0]]
-        if starttime == endtime:
-            starttime = starttime - datetime.timedelta(minutes=10)
-            endtime = endtime + datetime.timedelta(minutes=10)
+            foundIssue = self.IssueDescriptor()
+            foundIssue.features = {feature: groups[feature][groups.index[0]] for feature in featuresList}
+            foundIssue.feature_importances = feature_importances
+            foundIssue.nFailedJobs = groups[('ISFAILED', 'sum')][groups.index[0]]
+            foundIssue.nSuccessJobs = groups[('ISSUCCESS', 'sum')][groups.index[0]]
+            foundIssue.lostWallTime = groups[('LOSTWALLTIME', 'sum')][groups.index[0]]
 
-        foundIssue.timeWindow = {"start": starttime,
-                                 "end": endtime}
-        foundIssue.purity = foundIssue.nFailedJobs / (foundIssue.nFailedJobs + foundIssue.nSuccessJobs)
-        return foundIssue
+            starttime = groups[('ENDTIME', 'min')][groups.index[0]]
+            endtime = groups[('ENDTIME', 'max')][groups.index[0]]
+            if starttime == endtime:
+                starttime = starttime - datetime.timedelta(minutes=10)
+                endtime = endtime + datetime.timedelta(minutes=10)
+
+            foundIssue.timeWindow = {"start": starttime,
+                                     "end": endtime}
+            foundIssue.purity = foundIssue.nFailedJobs / (foundIssue.nFailedJobs + foundIssue.nSuccessJobs)
+            issues.append(foundIssue)
+        return issues
 
 
     def findIssues(self, frame_loc, listOfProblems=None):
         for errorHash in self.errorsToProcess:
             issue = self.scrubStatistics(frame_loc, errorHash)
             if issue:
-                listOfProblems.append(issue)
+                listOfProblems.extend(issue)
 
 
     def comparefeatures(self, features1, features2):
