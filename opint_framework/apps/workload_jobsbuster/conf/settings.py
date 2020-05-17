@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # General activation flag
-IS_ACTIVATED = False
+IS_ACTIVATED = True
 
 # The time period in sec when each agent is called. It is delay between starting time
 # Only once instance of each agent could be executed at the same time
