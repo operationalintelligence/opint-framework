@@ -10,10 +10,6 @@ def checkisHPC(frame, mergeditems):
         if len(frameNull.index) > 0:
             issue.isGRID = True
 
-
-#            errors[errfield] = {frame[errfield].iloc[0]:len(frame.index)}
-
-
 def mergedicts(dict1, dict2):
     outdict = {}
     unionKeys = set(dict1.keys()).union(dict2.keys())
