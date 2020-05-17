@@ -94,6 +94,7 @@ def fillIssuesList(issuesRaw):
         issue = issues.setdefault(issueRaw.issue_id_fk.issue_id, Issue())
         issue.features[issueRaw.key] = issueRaw.value
         issue.issueID = issueRaw.issue_id_fk.issue_id
+        issue.err_messages = issueRaw.issue_id_fk.err_messages
     return issues
 
 
