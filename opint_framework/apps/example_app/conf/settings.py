@@ -13,3 +13,10 @@ POLLING_TIME = {
 ENABLE_SCHEDULER = True
 
 API_PREFIX = "example_app/api"
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'dev.sqlite3'
+    }
+}
