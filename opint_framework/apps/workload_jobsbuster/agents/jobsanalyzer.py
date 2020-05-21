@@ -13,8 +13,8 @@ import tempfile
 import datetime
 from django.utils import timezone
 import opint_framework.apps.workload_jobsbuster.api.pandaDataImporter as dataImporter
-import json
-
+import json, os
+import pickle
 
 diagfields = ['DDMERRORDIAG', 'BROKERAGEERRORDIAG', 'DDMERRORDIAG', 'EXEERRORDIAG', 'JOBDISPATCHERERRORDIAG',
              'PILOTERRORDIAG', 'SUPERRORDIAG', 'TASKBUFFERERRORDIAG']
@@ -33,15 +33,29 @@ class JobsAnalyserAgent(BaseAgent):
 
     def processCycle(self):
         print("JobsAnalyserAgent started")
-        lastSession = AnalysisSessions.objects.using('jobs_buster_persistency').order_by('-timewindow_end').first()
-
         datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=12*60)
         dateto = datetime.datetime.utcnow()
-        dbsession = AnalysisSessions.objects.using('jobs_buster_persistency').create(timewindow_start=datefrom,
-                                                                                     timewindow_end=dateto)
-        pandasdf = dataImporter.retreiveData(datefrom, dateto)
-        preprocessedFrame = self.preprocessRawData(pandasdf)
 
+        ########## DEBUG SECTION #######
+        # datefrom = datetime.datetime.strptime("2020-05-19 07:00:00", OI_DATETIME_FORMAT)
+        # dateto = datetime.datetime.strptime("2020-05-19 18:00:00", OI_DATETIME_FORMAT)
+        # os.environ['ORACLE_HOME'] = "C:/local/instantclient_19_6"
+        # os.environ["PATH"] = "C:/local/instantclient_19_6"
+        ########## END DEBUG SECTION #######
+
+
+        lastSession = AnalysisSessions.objects.using('jobs_buster_persistency').order_by('-timewindow_end').first()
+        dbsession = AnalysisSessions.objects.using('jobs_buster_persistency').create(timewindow_start=datefrom,
+                                                                                    timewindow_end=dateto)
+        pandasdf = dataImporter.retreiveData(datefrom, dateto)
+
+        ########## DEBUG SECTION #######
+        #pickle.dump(preprocessedFrame, open("C:/tmp/rawdataframe0_1.sr", 'wb+'))
+        # pandasdf = pickle.load(open("C:/tmp/rawdataframe0.sr", 'rb'))
+        ########## END DEBUG SECTION #######
+
+
+        preprocessedFrame = self.preprocessRawData(pandasdf)
         listOfProblems = []
         self.findIssues(preprocessedFrame, listOfProblems)
         listOfProblems = self.reduceIssues(preprocessedFrame, listOfProblems)
@@ -183,10 +197,10 @@ class JobsAnalyserAgent(BaseAgent):
 
         frequencyW = newframe.groupby('combinederrors').agg(
             {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
-             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('LOSTWALLTIME', 'sum'), ascending=False).head(50)
+             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('LOSTWALLTIME', 'sum'), ascending=False).head(20)
         frequencyF = newframe.groupby('combinederrors').agg(
             {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
-             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False).head(50)
+             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False).head(20)
         self.errFrequency = pd.concat([frequencyW, frequencyF])
         for i, row in self.errFrequency.iterrows():
             if row[4] == row[5]:
@@ -380,7 +394,7 @@ class JobsAnalyserAgent(BaseAgent):
             (feature_names, feature_importances, interactions, X_tr_col) = self.analyseProblem(frame_loc.loc[mask_f | mask_s])
         except:
             return None
-        feature_importances = list(filter(lambda x: x[0] > 10, zip(feature_importances, feature_names)))
+        feature_importances = list(filter(lambda x: x[0] > 5, zip(feature_importances, feature_names)))
         feature_importances = self.convertFeaturesImportances(feature_importances)
         feature_importances = self.createOrthogonalSets(frame_loc.loc[mask_f | mask_s], feature_importances)
         issues = []
@@ -391,7 +405,7 @@ class JobsAnalyserAgent(BaseAgent):
             if len(featuresList) > 0:
                 mask = mask_f | mask_s
                 for feature in features:
-                    mask = mask & (frame_loc[filt[0]] == filt[1])
+                    mask = mask & (frame_loc[feature[0]] == feature[1])
                 groups = frame_loc.loc[mask].groupby(featuresList).agg(
                     {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
                      'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False)
@@ -462,7 +476,8 @@ class JobsAnalyserAgent(BaseAgent):
             classes[index] = set(pandaids)
         for i, pandaids in classes.items():
             for j in range(i + 1, len(classes) - 1):
-                if len(pandaids & classes[j]):
+                overlapLen = len(pandaids & classes[j])
+                if overlapLen > 0 and overlapLen/len(pandaids) > 0.3:
                     overlapping.setdefault(i, {})[j] = len(pandaids & classes[j])
         issues_to_delete = []
         for key in totals:

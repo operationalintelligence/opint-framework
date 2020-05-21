@@ -16,3 +16,4 @@ def mergedicts(dict1, dict2):
         messages = set(dict1.get(errfield, {}).keys()).union(dict2.get(errfield, {}).keys())
         outdict[errfield] = {message: dict1.get(errfield, {}).get(message, 0)+dict2.get(errfield, {}).get(message, 0) for message in messages}
     return outdict
+
