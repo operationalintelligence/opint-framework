@@ -13,6 +13,7 @@ class Issue:
         self.rgbaW = None
         self.name = None
         self.rgbaNF = None
+        self.err_messages = None
 
 
     def merge(self, otherIssue):
@@ -39,6 +40,8 @@ class Issue:
         self.observation_finished = latest.observation_finished
         self.issueID = latest.issueID
         self.recalculateMetrics()
+
+        # We miss merging of error messages
         return self
 
 

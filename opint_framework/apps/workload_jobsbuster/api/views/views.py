@@ -20,6 +20,8 @@ chunksize = 50
 
 OI_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
+computingtypecodes = {'hpc':2, 'grid':0}
+
 """
 API endpoint that allows SampleModel to be viewed or edited.
 """
@@ -35,8 +37,10 @@ def processTimeWindowData(request):
         datefrom = datetime.datetime.utcnow() - datetime.timedelta(hours=12)
     topN = int(request.query_params['topn']) if 'topn' in request.query_params else 20
     metric = (request.query_params['metric']) if 'metric' in request.query_params else 'loss'
+    computetype = (request.query_params['computetype']) if 'computetype' in request.query_params else None
 
-    ret = getIssuesWithMets(datefrom, dateto, topN=topN, metric=metric)
+
+    ret = getIssuesWithMets(datefrom, dateto, topN=topN, metric=metric, computetype=computetype)
     ret = addColorsAndNames(ret)
     ticks, mesuresW, mesuresNF, colorsNF, colorsW = getHistogramData(ret)
     return JsonResponse({"Result":"OK", "issues": serialize(ret), "ticks":ticks, "mesuresW":mesuresW, "mesuresNF":mesuresNF,
@@ -52,8 +56,12 @@ def serialize(issues):
     return setIssues
 
 
-def getIssuesWithMets(datefrom, dateto, topN, metric):
+def getIssuesWithMets(datefrom, dateto, topN, metric, computetype):
     query = Q(Q(issue_id_fk__observation_started__lt=dateto) & Q(issue_id_fk__observation_finished__gt=datefrom))
+
+    if computetype and computetype != 'all':
+        query = query & Q(issue_id_fk__payload_type=computingtypecodes[computetype])
+
     issuesRaw = WorkflowIssueMetadata.objects.using('jobs_buster_persistency').select_related('issue_id_fk').filter(query)
     issues = fillIssuesList(issuesRaw)
     issues = addObservations(issues, query)
@@ -86,6 +94,7 @@ def fillIssuesList(issuesRaw):
         issue = issues.setdefault(issueRaw.issue_id_fk.issue_id, Issue())
         issue.features[issueRaw.key] = issueRaw.value
         issue.issueID = issueRaw.issue_id_fk.issue_id
+        issue.err_messages = issueRaw.issue_id_fk.err_messages
     return issues
 
 

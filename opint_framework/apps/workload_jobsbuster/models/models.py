@@ -18,6 +18,23 @@ class WorkflowIssue(models.Model):
     walltime_loss = models.IntegerField(null=True, db_column='WALLTIME_LOSS')
     nFailed_jobs = models.IntegerField(null=True, db_column='NFAILED_JOBS')
     nSuccess_jobs = models.IntegerField(null=True, db_column='NSUCCESS_JOBS')
+    payload_type = models.IntegerField(null=True, db_column='PAYLOAD_TYPE')
+    err_messages = models.TextField(null=True, db_column='ERR_MESSAGES')
+
+    """
+        _data = models.TextField(
+                db_column='data',
+                blank=True)
+    
+        def set_data(self, data):
+            self._data = base64.encodestring(data)
+    
+        def get_data(self):
+            return base64.decodestring(self._data)
+    
+        data = property(get_data, set_data)
+    """
+
     class Meta:
         db_table = u'ATLAS_JOBS_BUSTER_ISSUE'
 

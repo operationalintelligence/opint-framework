@@ -8,11 +8,13 @@ from catboost import CatBoostRegressor, CatBoostClassifier, Pool, EFstrType
 from sklearn.feature_extraction.text import CountVectorizer
 import hashlib
 
+from opint_framework.apps.workload_jobsbuster.agents.postprocessing import checkisHPC, mergedicts
 import tempfile
 import datetime
 from django.utils import timezone
 import opint_framework.apps.workload_jobsbuster.api.pandaDataImporter as dataImporter
-import traceback, sys
+import json, os
+import pickle
 
 diagfields = ['DDMERRORDIAG', 'BROKERAGEERRORDIAG', 'DDMERRORDIAG', 'EXEERRORDIAG', 'JOBDISPATCHERERRORDIAG',
              'PILOTERRORDIAG', 'SUPERRORDIAG', 'TASKBUFFERERRORDIAG']
@@ -23,7 +25,6 @@ OI_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class JobsAnalyserAgent(BaseAgent):
     lock = threading.RLock()
-    counter = 0
     errFrequency = None
     errorsToProcess = None
 
@@ -31,34 +32,41 @@ class JobsAnalyserAgent(BaseAgent):
         pass
 
     def processCycle(self):
-        self.counter = 0
-
         print("JobsAnalyserAgent started")
-        lastSession = AnalysisSessions.objects.using('jobs_buster_persistency').order_by('-timewindow_end').first()
-
         datefrom = datetime.datetime.utcnow() - datetime.timedelta(minutes=12*60)
         dateto = datetime.datetime.utcnow()
 
-        #datefrom = datetime.datetime.strptime("2020-03-25 13:15:00", OI_DATETIME_FORMAT)
-        #dateto = datetime.datetime.strptime("2020-03-25 14:15:00", OI_DATETIME_FORMAT)
+        ########## DEBUG SECTION #######
+        # datefrom = datetime.datetime.strptime("2020-05-19 07:00:00", OI_DATETIME_FORMAT)
+        # dateto = datetime.datetime.strptime("2020-05-19 18:00:00", OI_DATETIME_FORMAT)
+        # os.environ['ORACLE_HOME'] = "C:/local/instantclient_19_6"
+        # os.environ["PATH"] = "C:/local/instantclient_19_6"
+        ########## END DEBUG SECTION #######
 
+
+        lastSession = AnalysisSessions.objects.using('jobs_buster_persistency').order_by('-timewindow_end').first()
         dbsession = AnalysisSessions.objects.using('jobs_buster_persistency').create(timewindow_start=datefrom,
-                                                                                     timewindow_end=dateto)
+                                                                                    timewindow_end=dateto)
         pandasdf = dataImporter.retreiveData(datefrom, dateto)
 
-        #pickle.dump(pandasdf, open(settings.datafilespath + "rawdataframe0_daily1.sr", 'wb+'))
-        #pandasdf = pickle.load(open(settings.datafilespath + "rawdataframe0_daily1.sr", 'rb'))
+        ########## DEBUG SECTION #######
+        #pickle.dump(preprocessedFrame, open("C:/tmp/rawdataframe0_1.sr", 'wb+'))
+        # pandasdf = pickle.load(open("C:/tmp/rawdataframe0.sr", 'rb'))
+        ########## END DEBUG SECTION #######
+
 
         preprocessedFrame = self.preprocessRawData(pandasdf)
-
         listOfProblems = []
         self.findIssues(preprocessedFrame, listOfProblems)
-        #listOfProblems = self.removeDublicates(listOfProblems)
-        #listOfProblems = sorted(listOfProblems, key=lambda i: i.lostWallTime, reverse=True)
-
         listOfProblems = self.reduceIssues(preprocessedFrame, listOfProblems)
-
+        checkisHPC(preprocessedFrame, listOfProblems)
         for spottedProblem in listOfProblems:
+            payload_type = 0
+            if spottedProblem.isHPC and spottedProblem.isGRID:
+                payload_type = 1
+            if spottedProblem.isHPC and not spottedProblem.isGRID:
+                payload_type = 2
+
             issue = WorkflowIssue.objects.using('jobs_buster_persistency').create(session_id_fk=dbsession,
                                                                                   observation_started=
                                                                                   spottedProblem.timeWindow[
@@ -70,7 +78,10 @@ class JobsAnalyserAgent(BaseAgent):
                                                                                       tzinfo=timezone.utc),
                                                                                   walltime_loss=spottedProblem.lostWallTime,
                                                                                   nFailed_jobs=spottedProblem.nFailedJobs,
-                                                                                  nSuccess_jobs=spottedProblem.nSuccessJobs)
+                                                                                  nSuccess_jobs=spottedProblem.nSuccessJobs,
+                                                                                  payload_type=payload_type,
+                                                                                  err_messages=json.dumps(dict(spottedProblem.errorsStrings)),
+                                                                                  )
 
             for featureName, featureValue in spottedProblem.features.items():
                 metadata = WorkflowIssueMetadata.objects.using('jobs_buster_persistency').create(issue_id_fk=issue,
@@ -127,6 +138,7 @@ class JobsAnalyserAgent(BaseAgent):
 #            lambda x: x.split('|')[-1] if x and '|' in x else 'Not specified').str.replace(" ", "%20")
 #        newframe['CLOUD'] = frame['CLOUD']
 #        newframe['CMTCONFIG'] = frame['CMTCONFIG']
+        newframe['SITE'] = frame['SITE']
         newframe['COMPUTINGSITE'] = frame['COMPUTINGSITE']
         newframe['COMPUTINGELEMENT'] = frame['COMPUTINGELEMENT']
         newframe['CREATIONHOST'] = frame['CREATIONHOST']
@@ -185,10 +197,10 @@ class JobsAnalyserAgent(BaseAgent):
 
         frequencyW = newframe.groupby('combinederrors').agg(
             {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
-             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('LOSTWALLTIME', 'sum'), ascending=False).head(50)
+             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('LOSTWALLTIME', 'sum'), ascending=False).head(20)
         frequencyF = newframe.groupby('combinederrors').agg(
             {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
-             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False).head(50)
+             'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False).head(20)
         self.errFrequency = pd.concat([frequencyW, frequencyF])
         for i, row in self.errFrequency.iterrows():
             if row[4] == row[5]:
@@ -226,7 +238,7 @@ class JobsAnalyserAgent(BaseAgent):
         def replace_all(text):
             common_tokens = set(my_tokenizer(text)).intersection(words_freqf)
             for i in common_tokens:
-                text = text.replace(i, 'replacement') if len(i) > 3 else text
+                text = text.replace(i, '**REPLACEMENT**') if len(i) > 3 else text
             return text
         frame[diagfield] = frame[diagfield].apply(replace_all)
 
@@ -332,12 +344,15 @@ class JobsAnalyserAgent(BaseAgent):
 
     class IssueDescriptor(object):
         features = {}
+        errorsStrings = {}
         timeWindow = {"start": None, "end": None}
         nFailedJobs = 0
         nSuccessJobs = 0
         lostWallTime = 0
         purity = 0
         isSplittable = True
+        isHPC = False
+        isGRID = False
 
         # We assume that input frame has the same time window as evaluated features
         def filterByIssue(self, frameWhole):
@@ -353,6 +368,14 @@ class JobsAnalyserAgent(BaseAgent):
             self.features.update(parentIssue.features)
 
 
+    def getErrorsForFrameSlice(self, frame):
+        errors = {}
+        for errfield in diagfields:
+            if not frame[errfield].iloc[0] == 'Not specified':
+                errors[errfield] = {frame[errfield].iloc[0]:len(frame.index)}
+        return errors
+
+
     def scrubStatistics(self, frame_loc, hashval):
 
         # In this function we determine the principal issue related feature existing in
@@ -363,19 +386,17 @@ class JobsAnalyserAgent(BaseAgent):
 
         mask_f = (frame_loc['ENDTIME'] >= freq['ENDTIME']['min']) & (frame_loc['ENDTIME'] <= freq['ENDTIME']['max']) & (
                     frame_loc['combinederrors'] == hashval)
-        mask_s = (frame_loc['ENDTIME'] >= freq['ENDTIME']['min'] - datetime.timedelta(minutes=10)) & (
-                    frame_loc['ENDTIME'] <= freq['ENDTIME']['max'] + datetime.timedelta(minutes=10)) & (
+        mask_s = (frame_loc['ENDTIME'] >= freq['ENDTIME']['min'] - datetime.timedelta(minutes=20)) & (
+                    frame_loc['ENDTIME'] <= freq['ENDTIME']['max'] + datetime.timedelta(minutes=20)) & (
                              frame_loc['JOBSTATUS'] == 'finished')
 
         try:
             (feature_names, feature_importances, interactions, X_tr_col) = self.analyseProblem(frame_loc.loc[mask_f | mask_s])
         except:
             return None
-        feature_importances = list(filter(lambda x: x[0] > 10, zip(feature_importances, feature_names)))
+        feature_importances = list(filter(lambda x: x[0] > 5, zip(feature_importances, feature_names)))
         feature_importances = self.convertFeaturesImportances(feature_importances)
         feature_importances = self.createOrthogonalSets(frame_loc.loc[mask_f | mask_s], feature_importances)
-        # feature_importances.sort(key=lambda x: x[2], reverse=True)
-        # print(feature_importances)
         issues = []
         for features in feature_importances:
             featuresList = []
@@ -384,7 +405,7 @@ class JobsAnalyserAgent(BaseAgent):
             if len(featuresList) > 0:
                 mask = mask_f | mask_s
                 for feature in features:
-                    mask = mask & (frame_loc[filt[0]] == filt[1])
+                    mask = mask & (frame_loc[feature[0]] == feature[1])
                 groups = frame_loc.loc[mask].groupby(featuresList).agg(
                     {'ISSUCCESS': 'sum', 'ISFAILED': 'sum', 'LOSTWALLTIME': 'sum',
                      'ENDTIME': ('min', 'max')}).reset_index().sort_values(by=('ISFAILED', 'sum'), ascending=False)
@@ -395,6 +416,7 @@ class JobsAnalyserAgent(BaseAgent):
             foundIssue.nFailedJobs = groups[('ISFAILED', 'sum')][groups.index[0]]
             foundIssue.nSuccessJobs = groups[('ISSUCCESS', 'sum')][groups.index[0]]
             foundIssue.lostWallTime = groups[('LOSTWALLTIME', 'sum')][groups.index[0]]
+            foundIssue.errorsStrings = self.getErrorsForFrameSlice(frame_loc.loc[mask_f])
 
             starttime = groups[('ENDTIME', 'min')][groups.index[0]]
             endtime = groups[('ENDTIME', 'max')][groups.index[0]]
@@ -431,6 +453,7 @@ class JobsAnalyserAgent(BaseAgent):
         destination_issue.nFailedJobs += source_issue.nFailedJobs
         destination_issue.nSuccessJobs += source_issue.nSuccessJobs
         destination_issue.lostWallTime += source_issue.lostWallTime
+        destination_issue.errorsStrings = mergedicts(destination_issue.errorsStrings, source_issue.errorsStrings)
         destination_issue.timeWindow = {
             "start": min(destination_issue.timeWindow['start'], source_issue.timeWindow['start']),
             "end": max(destination_issue.timeWindow['end'], source_issue.timeWindow['end'])}
@@ -453,7 +476,8 @@ class JobsAnalyserAgent(BaseAgent):
             classes[index] = set(pandaids)
         for i, pandaids in classes.items():
             for j in range(i + 1, len(classes) - 1):
-                if len(pandaids & classes[j]):
+                overlapLen = len(pandaids & classes[j])
+                if overlapLen > 0 and overlapLen/len(pandaids) > 0.3:
                     overlapping.setdefault(i, {})[j] = len(pandaids & classes[j])
         issues_to_delete = []
         for key in totals:
@@ -497,5 +521,4 @@ class JobsAnalyserAgent(BaseAgent):
         for i, item in enumerate(reduced_issues):
             if i not in mergeditemsindexes:
                 mergeditems.append(reduced_issues[i])
-
         return mergeditems
