@@ -191,7 +191,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
     import datetime
     date_hdfs_format = str(datetime.date.today()).replace("-", "/")
     save_path = join_strings_to_path(save_path, date_hdfs_format)
-    print("Saving raw prediction dataset to: {}/raw".format(save_path))
+    print("Saving raw prediction dataset to HDFS: {}/raw".format(save_path))
 
     if abstract:
         dataset = dataset.select(data_id, "t__error_message", F.col(tks_col).alias(out_tks_col), detoken_out_abs_col, src_col, dst_col, time_col,
@@ -440,7 +440,7 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
         #         cluster = cluster.groupBy("datetime").agg(F.count("datetime").alias("freq")).orderBy("datetime", ascending=True)
         if save_path:
             outpath = "{}/cluster_{}".format(save_path, clust_id[clust_col])
-
+            print("Saving time plots data to HDFS: {}".format(outpath))
             cluster.write.format('json').mode('overwrite').save(outpath)
         cluster = cluster.toPandas()
 
