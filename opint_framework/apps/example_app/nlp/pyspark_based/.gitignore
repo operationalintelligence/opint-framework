@@ -2,4 +2,7 @@
 /sample_data/**
 
 # notebooks
-**/notebooks/**/
+/notebooks/results/
+/notebooks/Test_summary_output.ipynb
+/notebooks/results/
+.ipynb_checkpoints
