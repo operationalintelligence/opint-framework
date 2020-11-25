@@ -79,6 +79,19 @@ class pysparkNLPAdapter(NLPAdapter):
         test_errors = test_errors.select(f"{self.context['id_col']}", "t__error_message", "src_hostname",
                                          "dst_hostname", f"{self.context['timestamp_tr_x']}")
 
+        from pyspark.sql.functions import udf
+        import datetime
+        # udf to convert the unix timestamp to datetime
+        get_timestamp = udf(lambda x: datetime.datetime.fromtimestamp(x / 1000.0).strftime("%Y-%m-%d %H:%M:%S"))
+
+        # apply this udf in the dataframe
+        test_errors = test_errors.withColumn("tr_datetime_complete", get_timestamp(test_errors.tr_timestamp_complete))
+        test_errors = test_errors.select(test_errors.columns[:-2] + ["tr_datetime_complete"])
+
+        #TODO: implement TIERs 3 filtering
+
+        # update context
+        self.context['timestamp_tr_x'] = "tr_datetime_complete"
         self.context['dataset'] = test_errors
 
     def run(self):
