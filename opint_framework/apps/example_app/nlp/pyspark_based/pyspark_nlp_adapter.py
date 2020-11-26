@@ -1,16 +1,16 @@
-from pyspark.shell import spark
 from pyspark.sql import SparkSession
+
+from opint_framework.apps.example_app.nlp.pyspark_based.clustering import pyspark_KM_Clustering
 from opint_framework.apps.example_app.nlp.pyspark_based.tokenization import pysparkTokenization
 from opint_framework.apps.example_app.nlp.pyspark_based.vectorization import pyspark_w2v_Vectorization
-from opint_framework.apps.example_app.nlp.pyspark_based.clustering import pyspark_KM_Clustering
-from opint_framework.core.nlp.nlp import NLPAdapter
 from opint_framework.core.dataproviders.hdfs_provider import HDFSLoader
-import pyspark.sql.functions as F
+from opint_framework.core.nlp.nlp import NLPAdapter
 
 
 class pysparkNLPAdapter(NLPAdapter):
 
-    def __init__(self, path_list, vo, id_col="tr_id", timestamp_tr_x="tr_timestamp_complete",  ## original data
+    def __init__(self, path_list, vo, id_col="tr_id", timestamp_tr_x="tr_timestamp_complete", ## original data
+                 filter_T3=False, #append_sites_to_msg=False, ## pre-processing
                  tks_col="stop_token_1",  ## tokenization
                  w2v_model_path=None, w2v_mode="load", w2v_save_mode="new", emb_size=150, win_size=8, min_count=500,
                  tks_vec="message_vector",  ## word2vec
@@ -36,6 +36,8 @@ class pysparkNLPAdapter(NLPAdapter):
         self.context['id_col'] = id_col
         self.context['timestamp_tr_x'] = timestamp_tr_x
         self.context['vo'] = vo
+        self.context['filter_T3'] = filter_T3
+        # self.context['append_sites_to_msg'] = append_sites_to_msg
         self.context['dataset'] = None
         self.context['tks_col'] = tks_col
         self.context['tks_vec'] = tks_vec
@@ -88,7 +90,11 @@ class pysparkNLPAdapter(NLPAdapter):
         test_errors = test_errors.withColumn("tr_datetime_complete", get_timestamp(test_errors.tr_timestamp_complete))
         test_errors = test_errors.select(test_errors.columns[:-2] + ["tr_datetime_complete"])
 
-        #TODO: implement TIERs 3 filtering
+        if self.context['filter_T3']:
+            from opint_framework.apps.example_app.nlp.pyspark_based.utils import add_tier_level
+            test_errors = add_tier_level(test_errors)
+            test_errors = test_errors.filter(~(test_errors.src_level.contains("T3")
+                                              & test_errors.dst_level.contains("T3")))
 
         # update context
         self.context['timestamp_tr_x'] = "tr_datetime_complete"
