@@ -77,19 +77,19 @@ class pysparkNLPAdapter(NLPAdapter):
         if self.context['vo'] is not None:
             test_errors = test_errors.filter(test_errors["vo"] == self.context['vo'])
 
-        # add row id and select only relevant variables
+        # select only relevant variables
         test_errors = test_errors.select(f"{self.context['id_col']}", "t__error_message", "src_hostname",
                                          "dst_hostname", f"{self.context['timestamp_tr_x']}")
 
+        # convert unix timestamp in datetime
         from pyspark.sql.functions import udf
         import datetime
-        # udf to convert the unix timestamp to datetime
-        get_timestamp = udf(lambda x: datetime.datetime.fromtimestamp(x / 1000.0).strftime("%Y-%m-%d %H:%M:%S"))
 
-        # apply this udf in the dataframe
+        get_timestamp = udf(lambda x: datetime.datetime.fromtimestamp(x / 1000.0).strftime("%Y-%m-%d %H:%M:%S"))
         test_errors = test_errors.withColumn("tr_datetime_complete", get_timestamp(test_errors.tr_timestamp_complete))
         test_errors = test_errors.select(test_errors.columns[:-2] + ["tr_datetime_complete"])
 
+        # exclude Tiers 3
         if self.context['filter_T3']:
             from opint_framework.apps.example_app.nlp.pyspark_based.utils import add_tier_level
             test_errors = add_tier_level(test_errors)
@@ -209,6 +209,7 @@ class pysparkNLPAdapter(NLPAdapter):
         return (summary)
 
     def execute(self):
+        import traceback
         try:
             print(f"\nNLP Adapter - {self.name}: Pre Processing input data")
             self.pre_process()
