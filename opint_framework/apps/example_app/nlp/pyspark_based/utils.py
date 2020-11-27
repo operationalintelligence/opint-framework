@@ -12,6 +12,10 @@ def get_hostname(endpoint):
 
 
 def add_tier_level(dataset):
+    """
+    Attach tier level to the respective src/dst hostname.
+    :return: dataset
+    """
     import requests
     from pyspark.sql.functions import create_map, lit
     from itertools import chain
@@ -39,7 +43,7 @@ def add_tier_level(dataset):
 
 def convert_endpoint_to_site(dataset):
     """
-    Convert src/dst hostname to the respective site names.
+    Attach site names to the respective src/dst hostname.
     :return: dataset
     """
     import requests
@@ -60,3 +64,32 @@ def convert_endpoint_to_site(dataset):
     dataset = dataset.withColumn("src_rcsite", mapping_expr[dataset["src_hostname"]]) \
         .withColumn("dst_rcsite", mapping_expr[dataset["dst_hostname"]])
     return (dataset)
+
+
+def exclude_downtime(dataset, spark):
+    """
+    Retrieve sites in downtime from CRIC and filter them out from the dataset
+    :return: dataset
+    """
+    import requests
+
+    # retrieve downtime
+    cric_url = "https://wlcg-cric.cern.ch/api/core/downtime/query/?json"
+    # TODO: fix SSL certificate issue
+    r = requests.get(url=cric_url, cert="/home/luca/Desktop/certificates/cert_CERN.pem", verify=False).json()
+    sites_downtime = []
+    for site, info in r.items():
+        for entry, values in info.items():
+            if values["severity"].lower() == "outage":
+                if any([substring in values["affected_services"].lower() for service in ["webdav", "xrootd", "srm"]]):
+                    sites_downtime.append(
+                        {"site": site, "start_time": values["start_time"], "end_time": values["end_time"]}
+                    downtimes_df = spark.createDataFrame(sites_downtime)
+                    dataset = dataset.join(downtimes_df, (
+                                dataset.src_rcsite.contains(downtimes_df.site) | dataset.dst_rcsite.contains(
+                            downtimes_df.site))) & (dataset.tr_datetime_complete <= downtimes_df.end_time) & (
+                                      dataset.tr_datetime_complete >= downtimes_df.start_time), how = 'left_anti')
+                    # mapping_expr = create_map([lit("active") for x in chain(*hostname_levels.items())])
+                    # dataset = dataset.withColumn("src_level", mapping_expr[dataset["src_hostname"]]) \
+                    #     .withColumn("dst_level", mapping_expr[dataset["dst_hostname"]])
+        return (dataset)
