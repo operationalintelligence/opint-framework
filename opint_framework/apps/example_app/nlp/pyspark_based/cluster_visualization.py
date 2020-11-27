@@ -1,3 +1,5 @@
+from opint_framework.apps.example_app.nlp.pyspark_based.utils import *
+
 def join_strings_to_path(base, end):
     import os
     if base is None:
@@ -158,7 +160,7 @@ def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs
 
         dataset = original.join(dataset, original[orig_id].alias("id") == dataset[data_id],
                                 how="outer").select(out_cols)
-        dataset = convert_endpoint_to_site(dataset, "src_hostname", "dst_hostname")
+        dataset = convert_endpoint_to_site(dataset)#, "src_hostname", "dst_hostname")
 
     if timeplot:
         timeplot_path = join_strings_to_path(save_path, "plot/timeplot")
@@ -358,51 +360,6 @@ def tokens_cloud(dataset, msg_col, clust_col="prediction", save_path=None,
                 os.remove(outname)
             fig.savefig(outname, format='png', bbox_inches='tight')
 
-
-def get_hostname(endpoint):
-    """
-    Extract hostname from the endpoint.
-    Returns empty string if failed to extract.
-
-    :return: hostname value
-    """
-    import re
-    p = r'^(.*?://)?(?P<host>[\w.-]+).*'
-    r = re.search(p, endpoint)
-
-    return r.group('host') if r else ''
-
-
-def convert_endpoint_to_site(dataset, src_col, dst_col):
-    """
-    Convert src/dst hostname to the respective site names.
-
-    :return: dataset
-    """
-    import requests  # , re
-    from pyspark.sql.functions import col, create_map, lit
-    from itertools import chain
-
-    # retrieve mapping
-    cric_url = "http://wlcg-cric.cern.ch/api/core/service/query/?json&type=SE"
-    r = requests.get(url=cric_url).json()
-    site_protocols = {}
-    for site, info in r.items():
-        if "protocols" in info:
-            # print(se, type(se), info, type(info))
-            for name, prot in info.get('protocols', {}).items():
-                site_protocols.setdefault(get_hostname(prot['endpoint']), site)
-
-    # apply mapping
-    mapping_expr = create_map([lit(x) for x in chain(*site_protocols.items())])
-    out_cols = dataset.columns
-    dataset = dataset.withColumnRenamed(src_col, "src")
-    dataset = dataset.withColumnRenamed(dst_col, "dst")
-    dataset = dataset.withColumn(src_col, mapping_expr[dataset["src"]]) \
-        .withColumn(dst_col, mapping_expr[dataset["dst"]])
-    return (dataset.select(out_cols))
-
-
 def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None):
     """ Plot the trend of error messages over time (per each cluster).
 
@@ -423,10 +380,12 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
     import matplotlib.dates as mdates
     import matplotlib.units as munits
 
-    dataset = (dataset.filter(F.col(time_col) > 0)  # ignore null values
-               .withColumn("datetime_str", F.from_unixtime(F.col(time_col) / 1000))  # datetime (string)
-               .withColumn("datetime", F.to_timestamp(F.col('datetime_str'), 'yyyy-MM-dd HH:mm'))  # datetime (numeric)
-               .select(clust_col, "datetime"))
+    dataset = (dataset.filter(~F.col(time_col).isNull())  # ignore null values
+               # .withColumn("datetime_str", F.from_unixtime(F.col(time_col) / 1000))  # datetime (string)
+               # .withColumn("datetime", F.to_timestamp(F.col('datetime_str'), 'yyyy-MM-dd HH:mm'))  # datetime (numeric)
+               # .select(clust_col, "datetime")
+               .select(clust_col, time_col)
+               )
     if k:
         clust_ids = [{"prediction": i} for i in range(0, k)]
     else:
@@ -436,31 +395,26 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
         print("Saving time plots to: {}".format(save_path))
 
     for clust_id in clust_ids:
-        cluster = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select("datetime")
-        #         cluster = cluster.groupBy("datetime").agg(F.count("datetime").alias("freq")).orderBy("datetime", ascending=True)
+        cluster = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select(time_col, clust_col)
         if save_path:
             outpath = "{}/cluster_{}".format(save_path, clust_id[clust_col])
             print("Saving time plots data to HDFS: {}".format(outpath))
             cluster.write.format('json').mode('overwrite').save(outpath)
         cluster = cluster.toPandas()
-
         try:
-            res_sort = cluster.datetime.value_counts(bins=24 * 6).sort_index()
+            time_aggregate = cluster.set_index("tr_datetime_complete")
+            time_aggregate = time_aggregate.resample('15min', offset="0Min", label='right').count()
+            del cluster # for saving memory
         except ValueError:
             print("""WARNING: time column completely empty. Errors time trend 
                   cannot be displayed for cluster {}""".format(clust_id[clust_col]))
             continue
-
-        x_datetime = [interval.right for interval in res_sort.index]
-
         converter = mdates.ConciseDateConverter()
         munits.registry[datetime.datetime] = converter
-
         fig, ax = plt.subplots(figsize=(10, 5))
-        #         ax.plot(res_sort.index, res_sort)
-        ax.plot(x_datetime, res_sort.values)
-        min_h = min(x_datetime)  # res_sort.index.min()
-        max_h = max(x_datetime)  # res_sort.index.max()
+        ax.plot(time_aggregate.index, time_aggregate.values)
+        min_h = time_aggregate.index.min()
+        max_h = time_aggregate.index.max()
         day_min = str(min_h)[:10]
         day_max = str(max_h)[:10]
         #         title = f"{'Cluster {} - init:'.format(3):>25}{day_min:>15}{str(min_h)[11:]:>12}" + \

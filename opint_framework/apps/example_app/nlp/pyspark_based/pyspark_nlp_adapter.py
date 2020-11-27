@@ -82,12 +82,13 @@ class pysparkNLPAdapter(NLPAdapter):
                                          "dst_hostname", f"{self.context['timestamp_tr_x']}")
 
         # convert unix timestamp in datetime
-        from pyspark.sql.functions import udf
+        from pyspark.sql.functions import udf, to_timestamp
         import datetime
 
         get_timestamp = udf(lambda x: datetime.datetime.fromtimestamp(x / 1000.0).strftime("%Y-%m-%d %H:%M:%S"))
-        test_errors = test_errors.withColumn("tr_datetime_complete", get_timestamp(test_errors.tr_timestamp_complete))
-        test_errors = test_errors.select(test_errors.columns[:-2] + ["tr_datetime_complete"])
+        test_errors = test_errors.withColumn("datetime_str", get_timestamp(test_errors.tr_timestamp_complete))
+        test_errors = test_errors.withColumn("tr_datetime_complete", to_timestamp(test_errors['datetime_str'], 'yyyy-MM-dd HH:mm'))
+        test_errors = test_errors.select(test_errors.columns[:-3] + ["tr_datetime_complete"])
 
         # exclude Tiers 3
         if self.context['filter_T3']:
