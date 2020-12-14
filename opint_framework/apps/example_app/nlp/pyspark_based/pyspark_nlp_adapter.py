@@ -81,14 +81,9 @@ class pysparkNLPAdapter(NLPAdapter):
         test_errors = test_errors.select(f"{self.context['id_col']}", "t__error_message", "src_hostname",
                                          "dst_hostname", f"{self.context['timestamp_tr_x']}")
 
-        # convert unix timestamp in datetime
-        from pyspark.sql.functions import udf, to_timestamp
-        import datetime
-
-        get_timestamp = udf(lambda x: datetime.datetime.fromtimestamp(x / 1000.0).strftime("%Y-%m-%d %H:%M:%S"))
-        test_errors = test_errors.withColumn("datetime_str", get_timestamp(test_errors.tr_timestamp_complete))
-        test_errors = test_errors.withColumn("tr_datetime_complete", to_timestamp(test_errors['datetime_str'], 'yyyy-MM-dd HH:mm'))
-        test_errors = test_errors.select(test_errors.columns[:-3] + ["tr_datetime_complete"])
+        # convert unix timestamp to datetime
+        from opint_framework.apps.example_app.nlp.pyspark_based.utils import convert_timestamp_to_datetime
+        test_errors = convert_timestamp_to_datetime(test_errors)
 
         # exclude Tiers 3
         if self.context['filter_T3']:
