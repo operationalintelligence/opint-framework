@@ -127,7 +127,7 @@ def exclude_downtime(dataset, spark):
         StructField('end_time', TimestampType(), False)
     ])
     downtimes_df = spark.createDataFrame(host_downtime, schema)
-    dataset = test_errors
+
     dataset = dataset.join(downtimes_df, [
         (dataset.dst_hostname.isin(downtimes_df.hostname) | dataset.dst_hostname.isin(downtimes_df.hostname) |
          dataset.src_rcsite.isin(downtimes_df.hostname) | dataset.dst_rcsite.isin(downtimes_df.hostname)),
