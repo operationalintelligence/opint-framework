@@ -128,11 +128,11 @@ def exclude_downtime(dataset, spark):
     ])
     downtimes_df = spark.createDataFrame(host_downtime, schema)
 
-    dataset = dataset.join(downtimes_df, [
-        (dataset.dst_hostname.isin(downtimes_df.hostname) | dataset.dst_hostname.isin(downtimes_df.hostname) |
-         dataset.src_rcsite.isin(downtimes_df.hostname) | dataset.dst_rcsite.isin(downtimes_df.hostname)),
-        dataset.tr_datetime_complete <= downtimes_df.end_time,
-        dataset.tr_datetime_complete >= downtimes_df.start_time], how='inner')
+    dataset = dataset.join(downtimes_df, (
+            (( (dataset.src_hostname == downtimes_df.hostname) | (dataset.dst_hostname == downtimes_df.hostname))
+              # | ( (dataset.src_rcsite == downtimes_df.hostname) | (dataset.dst_rcsite == downtimes_df.hostname) )
+             ) & (dataset.tr_datetime_complete >= downtimes_df.start_time) & (dataset.tr_datetime_complete <= downtimes_df.end_time)
+
+    ), how='left_anti')
 
     return (dataset)
-
