@@ -102,11 +102,12 @@ def exclude_downtime(dataset, spark):
     with open(cric_dump_path) as json_data:
         r = json.load(json_data)
 
+    storage_services = ['webdav', 'xrootd', 'srm',  'com.aws.s3', 'globus-gridftp']
     host_downtime = []
     for site, info in r.items():
         for entry in info:
             if entry['severity'].lower() == 'outage':
-                if any([service in entry['affected_services'].lower() for service in ['webdav', 'xrootd', 'srm']]):
+                if any([service in entry['affected_services'].lower() for service in storage_services]):
                     for prot in entry['protocols']:
                         host_downtime.append(
                             {'hostname': get_hostname(prot['endpoint'], site),
