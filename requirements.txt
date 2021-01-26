@@ -18,3 +18,9 @@ django_extensions
 cx_oracle
 python-dateutil
 matplotlib
+
+# dashboarding
+dash
+
+# automatic K selection
+kneed
