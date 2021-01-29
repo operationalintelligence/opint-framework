@@ -58,7 +58,11 @@ def get_k_best(results, metric="silhouette", method="knee"):
         wsse_values = results['wsse']
         silhouette_values = results['silhouette']
         best_K_wsse = KneeLocator(k_list, wsse_values, curve='convex', direction='decreasing').knee
+        if best_K_wsse is None:
+            best_K_wsse = results["model"][np.argmin(results["wsse"])].summary.k
         best_K_silhouette = KneeLocator(k_list, silhouette_values, curve='concave', direction='increasing').knee
+        if best_K_silhouette is None:
+            best_K_silhouette = [np.argmax(results["silhouette"])].summary.k
     else:
         print("Error: wrong method parameter. Specify \"knee\" (default) or \"best\".")
 
