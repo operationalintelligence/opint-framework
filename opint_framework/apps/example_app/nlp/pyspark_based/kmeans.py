@@ -57,8 +57,8 @@ def get_k_best(results, metric="silhouette", method="knee"):
         k_list = [model.summary.k for model in results['model']]
         wsse_values = results['wsse']
         silhouette_values = results['silhouette']
-        best_K_wsse = KneeLocator(k_list, wsse_values, curve='convex', direction='decreasing')
-        best_K_silhouette = KneeLocator(k_list, silhouette_values, curve='concave', direction='increasing')
+        best_K_wsse = KneeLocator(k_list, wsse_values, curve='convex', direction='decreasing').knee
+        best_K_silhouette = KneeLocator(k_list, silhouette_values, curve='concave', direction='increasing').knee
     else:
         print("Error: wrong method parameter. Specify \"knee\" (default) or \"best\".")
 
