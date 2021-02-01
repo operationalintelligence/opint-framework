@@ -9,13 +9,13 @@ from opint_framework.core.nlp.nlp import NLPAdapter
 
 class pysparkNLPAdapter(NLPAdapter):
 
-    def __init__(self, path_list, vo, id_col="tr_id", timestamp_tr_x="tr_timestamp_complete", ## original data
+    def __init__(self, path_list, vo=None, id_col="tr_id", timestamp_tr_x="tr_timestamp_complete", src_col='src_rcsite', dst_col='dst_rcsite', ## original data
                  filter_T3=False, #append_sites_to_msg=False, ## pre-processing
                  tks_col="stop_token_1",  ## tokenization
-                 w2v_model_path=None, w2v_mode="load", w2v_save_mode="new", emb_size=150, win_size=8, min_count=500,
+                 w2v_model_path=None, w2v_mode="load", w2v_save_mode="new", emb_size=250, win_size=12, min_count=500,
                  tks_vec="message_vector",  ## word2vec
                  ft_col="features", kmeans_model_path=None, kmeans_mode="train",
-                 pred_mode="static", new_cluster_thresh=None, k_list=[12, 14, 16, 18, 20],  # update_model_path=None,
+                 pred_mode="static", new_cluster_thresh=None, k_list=[8, 12, 15, 20],  # update_model_path=None,
                  distance="cosine", opt_initSteps=10, opt_tol=0.0001, opt_maxIter=30, log_path=None, n_cores=5,
                  ## K_optim
                  tr_initSteps=200, tr_tol=0.000001, tr_maxIter=100,  ## train_kmeans
@@ -35,6 +35,8 @@ class pysparkNLPAdapter(NLPAdapter):
         self.context['err_col'] = "t__error_message"
         self.context['id_col'] = id_col
         self.context['timestamp_tr_x'] = timestamp_tr_x
+        self.context['src_col'] = src_col
+        self.context['dst_col'] = dst_col
         self.context['vo'] = vo
         self.context['filter_T3'] = filter_T3
         # self.context['append_sites_to_msg'] = append_sites_to_msg
@@ -72,8 +74,14 @@ class pysparkNLPAdapter(NLPAdapter):
         # retrieve just data
         all_transfers = self.context['dataset'].select("data.*")
 
-        # filter test_errors only
-        test_errors = all_transfers.filter(all_transfers["t_final_transfer_state_flag"] == 0)
+        # filter only failed transfers with valid time_col (i.e. non-zero)
+        test_errors = all_transfers.filter(all_transfers["t_final_transfer_state_flag"] == 0).filter(
+            all_transfers[self.context['timestamp_tr_x']] > 0)
+
+        # cache the dataframe to speed-up processing --> requires appropriate spark settings:
+        # spark.executor.pyspark.memory (suggested: 16g); spark.driver.maxResultSize (suggested: 8g)
+        test_errors.cache()
+
         # filter virtual organization if specified
         if self.context['vo'] is not None:
             test_errors = test_errors.filter(test_errors["vo"] == self.context['vo'])
@@ -110,11 +118,16 @@ class pysparkNLPAdapter(NLPAdapter):
         self.context['timestamp_tr_x'] = "tr_datetime_complete"
         self.context['dataset'] = test_errors
 
+        # uncache dataframe to free memory
+        test_errors.persist()
+
     def run(self):
         from opint_framework.apps.example_app.nlp.pyspark_based.kmeans import get_k_best
         from pathlib import Path
 
         token_data = self.tokenization.tokenize_messages()
+        # cache the dataframe to speed-up processing
+        token_data.cache()
 
         if self.context['w2v_mode'] == "train":
             print("\nTraining Word2Vec model\n", "--" * 30, "\n")
@@ -135,6 +148,10 @@ class pysparkNLPAdapter(NLPAdapter):
 
         # add w2v uid to context
         self.context['w2v_uid'] = str(w2v_model)
+
+        # substitute cached dataframe to speed-up processing
+        token_data.persist()
+        vector_data.cache()
 
         # K value optimization
         res = self.clusterization.K_optim(k_list=self.context['k_list'], messages=vector_data,
@@ -176,21 +193,26 @@ class pysparkNLPAdapter(NLPAdapter):
                                                        tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
                                                        path_to_model=kmeans_model_path, mode=save_mode,
                                                        log_path=best_k_log_path)
+        # uncache dataframe to free memory
+        vector_data.cache()
+
         # add kmeans uid to context
         self.context['kmeans_uid'] = str(kmeans_model["model"])
         return (kmeans_model)
 
     def post_process(self, model, test_predictions=None):
-        from opint_framework.apps.example_app.nlp.pyspark_based.cluster_visualization import summary
+        import datetime
+        from opint_framework.apps.example_app.nlp.pyspark_based.utils import join_strings_to_path
+        from opint_framework.apps.example_app.nlp.pyspark_based.cluster_visualization import agg_cluster_per_time, agg_stats, agg_patterns
 
         # initialize to None in case not retrievable from the model
-        best_k = None
+        # best_k = None
 
         if type(model) == type({}):
             model = model["model"]
             test_predictions = model.summary.predictions
             best_k = model.summary.k
-        elif not test_predictions:
+        elif test_predictions is not None:
             # first we have to pre-preocess hdfs data to get clustering suitable format, i.e.:
             # 1. Tokenize
             # 2. Vectorize
@@ -205,18 +227,73 @@ class pysparkNLPAdapter(NLPAdapter):
                                                            pred_mode=self.context['pred_mode'],
                                                            # new_cluster_thresh=None, update_model_path=kmeans_model_path--> need to be defined
                                                            )
-        abs_dataset, summary = summary(dataset=test_predictions, k=best_k, data_id=self.context['id_col'],
-                                       orig_id=self.context['id_col'],
-                                       clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
-                                       abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
-                                       abstract=True, n_mess=None, wrdcld=self.context['wrdcld'],
-                                       original=self.context['dataset'], src_col="src_hostname", n_src=None,
-                                       dst_col="dst_hostname", n_dst=None, timeplot=self.context['timeplot'],
-                                       time_col=self.context['timestamp_tr_x'],
-                                       save_path=self.context["kmeans_model_path"],
-                                       tokenization=self.tokenization,
-                                       model_ref="{}_{}".format(self.context['w2v_uid'], self.context['kmeans_uid']))
-        return (summary)
+        # cache predictions to speed-up processing
+        test_predictions.cache()
+
+        # abstract parametric parts from raw error strings
+        abs_tks_in = "tokens_cleaned"
+        abs_tks_out="abstract_tokens"
+        detoken_out_abs_col = "pattern"
+        test_predictions = self.tokenization.abstract_params(test_predictions, tks_col=abs_tks_in, out_col=abs_tks_out)
+        test_predictions = self.tokenization.detokenize_messages(test_predictions, abs_tks_out, detoken_out_abs_col)
+
+        # set output path
+        date_hdfs_format = str(datetime.date.today()).replace("-", "/")
+        save_path = self.context['kmeans_model_path']
+        save_path = join_strings_to_path(save_path, date_hdfs_format)
+
+        # compute aggregation for time evolution plots and store it in save_path/count_per_interval.json
+        if self.context['timeplot']:
+            _ = agg_cluster_per_time(test_predictions, save_path=save_path, clust_col=self.context['clust_col'], time_col=self.context['timestamp_tr_x'])
+
+        # compute aggregation stats at cluster level
+        numeric_stats = agg_stats(test_predictions, save_path=save_path, clust_col=self.context['clust_col'], msg_col=self.context['err_col'],
+                              pattern_col=detoken_out_abs_col)
+        # compute aggregation of the triplets pattern_col+src_col+dst_col for each clust_col value
+        patterns_summary = agg_patterns(test_predictions, numeric_stats, save_path=save_path, clust_col=self.context['clust_col'],
+                                        pattern_col=detoken_out_abs_col, src_col=self.context['src_col'], dst_col=self.context['dst_col'])
+
+        return (patterns_summary)
+
+
+
+    # def post_process(self, model, test_predictions=None):
+    #     from opint_framework.apps.example_app.nlp.pyspark_based.cluster_visualization import summary
+    #
+    #     # initialize to None in case not retrievable from the model
+    #     best_k = None
+    #
+    #     if type(model) == type({}):
+    #         model = model["model"]
+    #         test_predictions = model.summary.predictions
+    #         best_k = model.summary.k
+    #     elif not test_predictions:
+    #         # first we have to pre-preocess hdfs data to get clustering suitable format, i.e.:
+    #         # 1. Tokenize
+    #         # 2. Vectorize
+    #         # 3. Clustering.data_preparation
+    #         test_predictions = self.tokenization.tokenize_messages()
+    #         w2v_model = self.vectorization.load_model(self.context['w2v_model_path'])
+    #         test_predictions = w2v_model.transform(test_predictions)
+    #         test_predictions = self.clusterization.data_preparation(test_predictions, self.context['tks_vec'])
+    #         ## WARNING: IF WE WANT TO USE ONLY POST PROCESSING WE NEED TO TAKE CARE OF INPUT PARAMETERS
+    #
+    #         test_predictions = self.clusterization.predict(tokenized=test_predictions, model=model,
+    #                                                        pred_mode=self.context['pred_mode'],
+    #                                                        # new_cluster_thresh=None, update_model_path=kmeans_model_path--> need to be defined
+    #                                                        )
+    #     abs_dataset, summary = summary(dataset=test_predictions, k=best_k, data_id=self.context['id_col'],
+    #                                    orig_id=self.context['id_col'],
+    #                                    clust_col=self.context['clust_col'], tks_col=self.context['tks_col'],
+    #                                    abs_tks_in="tokens_cleaned", abs_tks_out="abstract_tokens",
+    #                                    abstract=True, n_mess=None, wrdcld=self.context['wrdcld'],
+    #                                    original=self.context['dataset'], src_col="src_hostname", n_src=None,
+    #                                    dst_col="dst_hostname", n_dst=None, timeplot=self.context['timeplot'],
+    #                                    time_col=self.context['timestamp_tr_x'],
+    #                                    save_path=self.context["kmeans_model_path"],
+    #                                    tokenization=self.tokenization,
+    #                                    model_ref="{}_{}".format(self.context['w2v_uid'], self.context['kmeans_uid']))
+    #     return (summary)
 
     def execute(self):
         import traceback

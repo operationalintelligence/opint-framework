@@ -106,6 +106,7 @@ def agg_stats(dataset, save_path=None, clust_col='prediction', msg_col='t__error
     :param pattern_col: column containing the abstract message, i.e. after removing parametric parts (default: 'pattern')
     :return: stats_view: pyspark dataframe
     """
+    from pathlib import Path
     from pyspark.sql import functions as F
     stats_view = dataset.groupBy(clust_col).agg(F.count(clust_col).alias('cluster_size'),
                                                 F.countDistinct(msg_col).alias('unique_strings'),
@@ -142,6 +143,7 @@ def agg_patterns(dataset, stats_view, save_path=None, clust_col='prediction', pa
     :param dst_col: column containing information about the destination (default: 'dst_rcsite')
     :return: patterns_view: pandas dataframe
     """
+    from pathlib import Path
     from pyspark.sql import functions as F
     from pyspark.sql.window import Window
     window = Window().partitionBy([clust_col]).orderBy(F.col('n').desc())
