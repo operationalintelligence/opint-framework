@@ -1,13 +1,6 @@
 from opint_framework.apps.example_app.nlp.pyspark_based.utils import *
 
-def join_strings_to_path(base, end):
-    import os
-    if base is None:
-        base = os.getcwd()
-    if end is None:
-        end = os.getcwd()
-    return("{}/{}".format(base, end))
-
+# TODO: clean from old summary/visualization utils
 def stats_summary(dataset, clust_col="prediction", tks_col="stop_token_1", abs_tks_out="abstract_message",
                   abstract=True):
     """Compute frequencies of unique messages aggregated per cluster.
@@ -100,6 +93,85 @@ def pattern_summary(dataset, clust_col="prediction", tks_col="stop_token_1", abs
     summary_table = summary_table.join(grouped_patterns_dst,
                                        on=[clust_col, "rank_pattern"], how="full")
     return (summary_table)
+
+
+# TODO: update saving with deal_with_save_path utils in all agg_* functions
+def agg_stats(dataset, save_path=None, clust_col='prediction', msg_col='t__error_message', pattern_col='pattern'):
+    """Compute aggregate stats for each clust_col value, namely `cluster_size` (total errors in the cluster), `unique_strings`
+     (total number of different strings) and `unique_patterns` (number of different strings after removal of parametric parts).
+      The rows are ordered by descending cluster_size. The output can be stored at save_path if specified.
+
+    :param dataset: pyspark dataframe with predictions in clust_col, original message in msg_col and abstract message in pattern_col
+    :param save_path: where to store output table (default: None, i.e. no saving)
+    :param clust_col: column containing predictions (default: 'prediction')
+    :param msg_col: column containing original message (default: 't__error_message')
+    :param pattern_col: column containing the abstract message, i.e. after removing parametric parts (default: 'pattern')
+    :return: stats_view: pyspark dataframe
+    """
+    from pathlib import Path
+    from pyspark.sql import functions as F
+    stats_view = dataset.groupBy(clust_col).agg(F.count(clust_col).alias('cluster_size'),
+                                                F.countDistinct(msg_col).alias('unique_strings'),
+                                                F.countDistinct(pattern_col).alias('unique_patterns'))
+
+    if save_path:
+        out_format = '.json'
+        if str(save_path).endswith(out_format):
+            base_path = Path(save_path).parent
+            outname = Path(save_path)
+        else:
+            base_path = Path(save_path)
+            outname = base_path / f'numeric_stats{out_format}'
+        base_path.mkdir(exist_ok=True, parents=True)
+        pd_stats_view = stats_view.toPandas().sort_values(["cluster_size", "unique_strings", "unique_patterns"],
+                                                          ascending=[False, False, False])
+        pd_stats_view.to_json(outname, orient='index')
+    return stats_view
+
+
+def agg_patterns(dataset, stats_view, save_path=None, clust_col='prediction', pattern_col='pattern',
+                 src_col='src_rcsite', dst_col='dst_rcsite'):
+    """Compute aggregate stats for each clust_col value for the triplets pattern_col+src_col+dst_col and return a summary
+    after joining with stats_view. The rows are ordered by descending cluster_size and descending triplet frequency.
+    The output can be stored at save_path if specified.
+
+    :param dataset: pyspark dataframe with predictions in clust_col, original message in msg_col and abstract message in pattern_col
+    :param stats_view:
+    :param save_path: where to store output table (default: None, i.e. no saving)
+    :param clust_col: column containing predictions (default: 'prediction')
+    :param msg_col: column containing original message (default: 't__error_message')
+    :param pattern_col: column containing the abstract message, i.e. after removing parametric parts (default: 'pattern')
+    :param src_col: column containing information about the source (default: 'src_rcsite')
+    :param dst_col: column containing information about the destination (default: 'dst_rcsite')
+    :return: patterns_view: pandas dataframe
+    """
+    from pathlib import Path
+    from pyspark.sql import functions as F
+    from pyspark.sql.window import Window
+    window = Window().partitionBy([clust_col]).orderBy(F.col('n').desc())
+
+    patterns = dataset.groupBy(clust_col, pattern_col, src_col, dst_col).agg(
+        F.count('*').alias('n')).orderBy(F.col('n').desc())
+    patterns = patterns.withColumn("rank", F.rank().over(window))  # .filter(F.col('rank') <= n_mess)
+
+    outcols = [clust_col, 'cluster_size', 'unique_strings', 'unique_patterns', pattern_col, src_col, dst_col,
+               'n', 'n_perc', 'rank']
+    patterns_view = patterns.join(stats_view, on=clust_col, how='left').orderBy('cluster_size', 'n',
+                                                                                ascending=[False, False])
+    patterns_view = patterns_view.withColumn('n_perc', F.col('n') / F.col('cluster_size'))
+    patterns_view = patterns_view.select(
+        outcols).toPandas()  # .set_index([clust_col, "cluster_size", "unique_strings", "unique_patterns"])
+    if save_path:
+        out_format = '.json'
+        if str(save_path).endswith(out_format):
+            base_path = Path(save_path).parent
+            outname = Path(save_path)
+        else:
+            base_path = Path(save_path)
+            outname = base_path / f'patterns_summary{out_format}'
+        base_path.mkdir(exist_ok=True, parents=True)
+        patterns_view.to_json(outname, orient='index')
+    return patterns_view
 
 
 def summary(dataset, k=None, clust_col="prediction", tks_col="stop_token_1", abs_tks_out="abstract_message",
@@ -360,75 +432,177 @@ def tokens_cloud(dataset, msg_col, clust_col="prediction", save_path=None,
                 os.remove(outname)
             fig.savefig(outname, format='png', bbox_inches='tight')
 
-def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None):
-    """ Plot the trend of error messages over time (per each cluster).
-
-    -- params:
-    dataset (pyspark.sql.dataframe.DataFrame): data frame with predictions and message times
-    time_col (string): name of the unix time in milliseconds
-    clust_col (string): name of the cluster prediction column
-    k (int): number of clusters. If specified the executing time decreases. Default None
-    save_path (string): where to save output figures. Default None (no saving)
-
-    Returns: None
+def agg_cluster_per_time(dataset, save_path=None, freq='15min', clust_col='prediction', time_col='tr_datetime_complete'):
     """
-    import pyspark.sql.functions as F
-    import os
-    import datetime
+
+    :param dataset: pyspark dataframe with clust_col containing clustering predictions and time_col contains the error datetime
+    :param save_path: where to store the pre-aggregate counts (default: None, i.e. no saving)
+    :param freq: time interval width for aggregation using pandas.Grouper() (default: '15min')
+    :param clust_col: column with predictions (default: 'prediction')
+    :param time_col: column with error datetimes (default: 'tr_datetime_complete')
+    :return: count_per_interval: pandas dataframe
+    """
     from pathlib import Path
-    from matplotlib import pyplot as plt
-    import matplotlib.dates as mdates
-    import matplotlib.units as munits
+    import pandas as pd
 
-    dataset = (dataset.filter(~F.col(time_col).isNull())  # ignore null values
-               # .withColumn("datetime_str", F.from_unixtime(F.col(time_col) / 1000))  # datetime (string)
-               # .withColumn("datetime", F.to_timestamp(F.col('datetime_str'), 'yyyy-MM-dd HH:mm'))  # datetime (numeric)
-               # .select(clust_col, "datetime")
-               .select(clust_col, time_col)
-               )
-    if k:
-        clust_ids = [{"prediction": i} for i in range(0, k)]
-    else:
-        clust_ids = dataset.select(clust_col).distinct().collect()
+    dataset = dataset.select([clust_col, time_col]).toPandas()
+    dataset['dt'] = pd.to_datetime(dataset[time_col])
+    count_per_interval = dataset.groupby([clust_col, pd.Grouper(key="dt", freq=freq)]).count()
+    count_per_interval = count_per_interval[[count_per_interval.columns[0]]]
+    count_per_interval.columns = ['count']
 
+    # save aggregate results
     if save_path:
-        print("Saving time plots to: {}".format(save_path))
-
-    for clust_id in clust_ids:
-        cluster = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select(time_col, clust_col)
-        if save_path:
-            outpath = "{}/cluster_{}".format(save_path, clust_id[clust_col])
-            print("Saving time plots data to HDFS: {}".format(outpath))
-            cluster.write.format('json').mode('overwrite').save(outpath)
-        cluster = cluster.toPandas()
-        try:
-            time_aggregate = cluster.set_index("tr_datetime_complete")
-            time_aggregate = time_aggregate.resample('15min', offset="0Min", label='right').count()
-            del cluster # for saving memory
-        except ValueError:
-            print("""WARNING: time column completely empty. Errors time trend 
-                  cannot be displayed for cluster {}""".format(clust_id[clust_col]))
-            continue
-        converter = mdates.ConciseDateConverter()
-        munits.registry[datetime.datetime] = converter
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(time_aggregate.index, time_aggregate.values, "o--b)
-        min_h = time_aggregate.index.min()
-        max_h = time_aggregate.index.max()
-        day_min = str(min_h)[:10]
-        day_max = str(max_h)[:10]
-        #         title = f"{'Cluster {} - init:'.format(3):>25}{day_min:>15}{str(min_h)[11:]:>12}" + \
-        #                  f"\n{'          - end:':>25}{day_max:>15}{str(max_h)[11:]:>12}"
-        title = "Cluster {} - day: {}".format(clust_id[clust_col], day_min)
-        plt.title(title)
-
-        if save_path:
-            save_path = Path(save_path)
-            save_path.mkdir(parents=True, exist_ok=True)
-            outpath = save_path / "cluster_{}.png".format(clust_id[clust_col])
-            # print("Saving time plots to: {}".format(outname))
-            if os.path.isfile(outpath):
-                os.remove(outpath)
-            fig.savefig(outpath, format='png', bbox_inches='tight')
+        if str(save_path).endswith('.json'):
+            base_path = Path(save_path).parent
+            outname = save_path
         else:
-            plt.show()
+            base_path = Path(save_path)
+            outname = base_path / "count_per_interval.json"
+        base_path.mkdir(exist_ok=True, parents=True)
+
+        count_per_interval.reset_index().to_json(outname, orient='index', date_format='iso')
+    return(count_per_interval)
+
+
+def plot_time(agg_data, save_path=None, clusters_list=None, clust_col='prediction', freq='15min', tz='UTC', show=True):
+    """
+
+    :param agg_data: pandas dataframe or path to json file (orient='index') as str or pathlib.PosixPath, with columns:
+                        'dt' --> datetime range in tz time zone and freq intervals
+                        clust_col --> column with predicted clusters
+                        'counts' --> counts of errors per clust_col in the given 'dt' interval
+    :param save_path: str or pathlib.PosixPath where to store html figure output (default: None, i.e. don't save)
+    :param clusters_list: list of cluster labels to plot (default: None, i.e. plot all)
+    :param clust_col: name of the column containing cluster labels (default: 'prediction')
+    :param tz: time zone of the 'dt' column of agg_data (default: 'UTC')
+    :param freq: interval length of the 'dt' column of agg_data (default: '15mins')
+    :param show: bool whether to show the plot or just return it (default: True)
+    :return: fig: plotly.graph_objs._figure.Figure
+    """
+    from pathlib import Path
+    import pandas as pd
+    import datetime
+    import plotly.graph_objects as go
+
+    # read data if agg_data is path-to-file
+    if type(agg_data) in [type(str()), type(Path())]:
+        agg_data = pd.read_json(agg_data, orient='index', convert_dates=['dt']).set_index('dt')
+
+    # define full daily series for plotting
+    intervals = pd.date_range(agg_data.index[0].date(),
+                              agg_data.index[0].date() + datetime.timedelta(1), freq=freq, tz=tz)
+
+    # get the list of cluster labels from data if not specified
+    if clusters_list is None:
+        clusters_list = agg_data[clust_col].unique()
+
+    # initialize figure
+    fig = go.Figure()
+    # loop through clusters and add one trace per group
+    for clust_id in clusters_list:
+        # get count
+        counts = agg_data[agg_data[clust_col]==clust_id]['count'].reindex(intervals, fill_value=0)
+        fig.add_trace(go.Scatter(x=intervals, y= counts,
+                                 mode='lines+markers',
+                                 name=str(clust_id)
+                                 )
+                      )
+    fig.update_layout(
+        title={'text': "time evolution".title(),'x': 0.5,'xanchor': 'center',
+               'font': dict(family="Cambria", size=20,)},
+        xaxis_title="Time",
+        yaxis_title="N. errors / 15 mins",
+        legend_title="Clusters",
+        font=dict(
+            family="Cambria",
+            size=16,
+            # color="Royalblue"
+        )
+    )
+    if save_path:
+        if str(save_path).endswith('.html'):
+            base_path = Path(save_path).parent
+            outname = Path(save_path)
+        else:
+            base_path = Path(save_path)
+            outname = base_path / 'all_clusters.html'
+        base_path.mkdir(exist_ok=True, parents=True)
+        fig.write_html(str(outname))
+    if show:
+        fig.show()
+    return fig
+
+
+# def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None):
+#     """ Plot the trend of error messages over time (per each cluster).
+#
+#     -- params:
+#     dataset (pyspark.sql.dataframe.DataFrame): data frame with predictions and message times
+#     time_col (string): name of the unix time in milliseconds
+#     clust_col (string): name of the cluster prediction column
+#     k (int): number of clusters. If specified the executing time decreases. Default None
+#     save_path (string): where to save output figures. Default None (no saving)
+#
+#     Returns: None
+#     """
+#     import pyspark.sql.functions as F
+#     import os
+#     import datetime
+#     from pathlib import Path
+#     from matplotlib import pyplot as plt
+#     import matplotlib.dates as mdates
+#     import matplotlib.units as munits
+#
+#     dataset = (dataset.filter(~F.col(time_col).isNull())  # ignore null values
+#                # .withColumn("datetime_str", F.from_unixtime(F.col(time_col) / 1000))  # datetime (string)
+#                # .withColumn("datetime", F.to_timestamp(F.col('datetime_str'), 'yyyy-MM-dd HH:mm'))  # datetime (numeric)
+#                # .select(clust_col, "datetime")
+#                .select(clust_col, time_col)
+#                )
+#     if k:
+#         clust_ids = [{"prediction": i} for i in range(0, k)]
+#     else:
+#         clust_ids = dataset.select(clust_col).distinct().collect()
+#
+#     if save_path:
+#         print("Saving time plots to: {}".format(save_path))
+#
+#     for clust_id in clust_ids:
+#         cluster = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select(time_col, clust_col)
+#         if save_path:
+#             outpath = "{}/cluster_{}".format(save_path, clust_id[clust_col])
+#             print("Saving time plots data to HDFS: {}".format(outpath))
+#             cluster.write.format('json').mode('overwrite').save(outpath)
+#         cluster = cluster.toPandas()
+#         try:
+#             time_aggregate = cluster.set_index("tr_datetime_complete")
+#             time_aggregate = time_aggregate.resample('15min', offset="0Min", label='right').count()
+#             del cluster # for saving memory
+#         except ValueError:
+#             print("""WARNING: time column completely empty. Errors time trend
+#                   cannot be displayed for cluster {}""".format(clust_id[clust_col]))
+#             continue
+#         converter = mdates.ConciseDateConverter()
+#         munits.registry[datetime.datetime] = converter
+#         fig, ax = plt.subplots(figsize=(10, 5))
+#         ax.plot(time_aggregate.index, time_aggregate.values, "o--b")
+#         min_h = time_aggregate.index.min()
+#         max_h = time_aggregate.index.max()
+#         day_min = str(min_h)[:10]
+#         day_max = str(max_h)[:10]
+#         #         title = f"{'Cluster {} - init:'.format(3):>25}{day_min:>15}{str(min_h)[11:]:>12}" + \
+#         #                  f"\n{'          - end:':>25}{day_max:>15}{str(max_h)[11:]:>12}"
+#         title = "Cluster {} - day: {}".format(clust_id[clust_col], day_min)
+#         plt.title(title)
+#
+#         if save_path:
+#             save_path = Path(save_path)
+#             save_path.mkdir(parents=True, exist_ok=True)
+#             outpath = save_path / "cluster_{}.png".format(clust_id[clust_col])
+#             # print("Saving time plots to: {}".format(outname))
+#             if os.path.isfile(outpath):
+#                 os.remove(outpath)
+#             fig.savefig(outpath, format='png', bbox_inches='tight')
+#         else:
+#             plt.show()

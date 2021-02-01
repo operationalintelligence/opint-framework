@@ -44,20 +44,34 @@ def plot_metrics(results):
     return (None)
 
 
-def get_k_best(results, metric="silhouette"):
+def get_k_best(results, metric="silhouette", method="knee"):
     """Return the best K value according to the specified metric."""
     import numpy as np
+    from kneed import KneeLocator
     from matplotlib import pyplot as plt
 
-    best_K_wsse = results["model"][np.argmin(results["wsse"])].summary.k
-    best_K_silhouette = results["model"][np.argmax(results["silhouette"])].summary.k
+    if method == 'best':
+        best_K_wsse = results["model"][np.argmin(results["wsse"])].summary.k
+        best_K_silhouette = [np.argmax(results["silhouette"])].summary.k
+    elif method == 'knee':
+        k_list = [model.summary.k for model in results['model']]
+        wsse_values = results['wsse']
+        silhouette_values = results['silhouette']
+        best_K_wsse = KneeLocator(k_list, wsse_values, curve='convex', direction='decreasing').knee
+        if best_K_wsse is None:
+            best_K_wsse = results["model"][np.argmin(results["wsse"])].summary.k
+        best_K_silhouette = KneeLocator(k_list, silhouette_values, curve='concave', direction='increasing').knee
+        if best_K_silhouette is None:
+            best_K_silhouette = results["model"][np.argmax(results["silhouette"])].summary.k
+    else:
+        print("Error: wrong method parameter. Specify \"knee\" (default) or \"best\".")
 
     if metric == "silhouette":
         return (best_K_silhouette)
     elif metric == "wsse":
         return (best_K_wsse)
     else:
-        print("Error: wrong metric parameter. Specify \"silhouette\" or \"wsse\".")
+        print("Error: wrong metric parameter. Specify \"silhouette\" (default) or \"wsse\".")
         return (None)
 
 
