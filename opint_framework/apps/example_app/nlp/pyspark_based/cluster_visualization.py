@@ -371,36 +371,22 @@ def agg_cluster_per_time(dataset, save_path=None, freq='15min', clust_col='predi
     count_per_interval = count_per_interval[[count_per_interval.columns[0]]]
     count_per_interval.columns = ['count']
 
+    # save aggregate results
     if save_path:
-        print("Saving time plots to: {}".format(save_path))
+        if str(save_path).endswith('.json'):
+            base_path = Path(save_path).parent
+            outname = save_path
+        else:
+            base_path = Path(save_path)
+            outname = base_path / "count_per_interval.json"
+        base_path.mkdir(exist_ok=True, parents=True)
 
-    for clust_id in clust_ids:
-        cluster = dataset.filter(F.col(clust_col) == clust_id[clust_col]).select(time_col, clust_col)
-        if save_path:
-            outpath = "{}/cluster_{}".format(save_path, clust_id[clust_col])
-            print("Saving time plots data to HDFS: {}".format(outpath))
-            cluster.write.format('json').mode('overwrite').save(outpath)
-        cluster = cluster.toPandas()
-        try:
-            time_aggregate = cluster.set_index("tr_datetime_complete")
-            time_aggregate = time_aggregate.resample('15min', offset="0Min", label='right').count()
-            del cluster # for saving memory
-        except ValueError:
-            print("""WARNING: time column completely empty. Errors time trend 
-                  cannot be displayed for cluster {}""".format(clust_id[clust_col]))
-            continue
-        converter = mdates.ConciseDateConverter()
-        munits.registry[datetime.datetime] = converter
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(time_aggregate.index, time_aggregate.values, "o--b")
-        min_h = time_aggregate.index.min()
-        max_h = time_aggregate.index.max()
-        day_min = str(min_h)[:10]
-        day_max = str(max_h)[:10]
-        #         title = f"{'Cluster {} - init:'.format(3):>25}{day_min:>15}{str(min_h)[11:]:>12}" + \
-        #                  f"\n{'          - end:':>25}{day_max:>15}{str(max_h)[11:]:>12}"
-        title = "Cluster {} - day: {}".format(clust_id[clust_col], day_min)
-        plt.title(title)
+        count_per_interval.reset_index().to_json(outname, orient='index', date_format='iso')
+    return(count_per_interval)
+
+
+def plot_time(agg_data, save_path=None, clusters_list=None, clust_col='prediction', freq='15min', tz='UTC', show=True):
+    """
 
         if save_path:
             save_path = Path(save_path)
