@@ -352,36 +352,24 @@ def tokens_cloud(dataset, msg_col, clust_col="prediction", save_path=None,
                 os.remove(outname)
             fig.savefig(outname, format='png', bbox_inches='tight')
 
-def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None):
-    """ Plot the trend of error messages over time (per each cluster).
-
-    -- params:
-    dataset (pyspark.sql.dataframe.DataFrame): data frame with predictions and message times
-    time_col (string): name of the unix time in milliseconds
-    clust_col (string): name of the cluster prediction column
-    k (int): number of clusters. If specified the executing time decreases. Default None
-    save_path (string): where to save output figures. Default None (no saving)
-
-    Returns: None
+def agg_cluster_per_time(dataset, save_path=None, freq='15min', clust_col='prediction', time_col='tr_datetime_complete'):
     """
-    import pyspark.sql.functions as F
-    import os
-    import datetime
-    from pathlib import Path
-    from matplotlib import pyplot as plt
-    import matplotlib.dates as mdates
-    import matplotlib.units as munits
 
-    dataset = (dataset.filter(~F.col(time_col).isNull())  # ignore null values
-               # .withColumn("datetime_str", F.from_unixtime(F.col(time_col) / 1000))  # datetime (string)
-               # .withColumn("datetime", F.to_timestamp(F.col('datetime_str'), 'yyyy-MM-dd HH:mm'))  # datetime (numeric)
-               # .select(clust_col, "datetime")
-               .select(clust_col, time_col)
-               )
-    if k:
-        clust_ids = [{"prediction": i} for i in range(0, k)]
-    else:
-        clust_ids = dataset.select(clust_col).distinct().collect()
+    :param dataset: pyspark dataframe with clust_col containing clustering predictions and time_col contains the error datetime
+    :param save_path: where to store the pre-aggregate counts (default: None, i.e. no saving)
+    :param freq: time interval width for aggregation using pandas.Grouper() (default: '15min')
+    :param clust_col: column with predictions (default: 'prediction')
+    :param time_col: column with error datetimes (default: 'tr_datetime_complete')
+    :return: count_per_interval: pandas dataframe
+    """
+    from pathlib import Path
+    import pandas as pd
+
+    dataset = dataset.select([clust_col, time_col]).toPandas()
+    dataset['dt'] = pd.to_datetime(dataset[time_col])
+    count_per_interval = dataset.groupby([clust_col, pd.Grouper(key="dt", freq=freq)]).count()
+    count_per_interval = count_per_interval[[count_per_interval.columns[0]]]
+    count_per_interval.columns = ['count']
 
     if save_path:
         print("Saving time plots to: {}".format(save_path))
