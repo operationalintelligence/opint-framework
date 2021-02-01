@@ -1,13 +1,5 @@
 from opint_framework.apps.example_app.nlp.pyspark_based.utils import *
 
-def join_strings_to_path(base, end):
-    import os
-    if base is None:
-        base = os.getcwd()
-    if end is None:
-        end = os.getcwd()
-    return("{}/{}".format(base, end))
-
 def stats_summary(dataset, clust_col="prediction", tks_col="stop_token_1", abs_tks_out="abstract_message",
                   abstract=True):
     """Compute frequencies of unique messages aggregated per cluster.

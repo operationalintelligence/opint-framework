@@ -140,3 +140,12 @@ def exclude_downtime(dataset, spark):
     ), how='left_anti')
 
     return (dataset)
+
+
+def join_strings_to_path(base, end):
+    import os
+    if base is None:
+        base = os.getcwd()
+    if end is None:
+        end = '.'
+    return("{}/{}".format(base, end))
