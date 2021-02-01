@@ -1,5 +1,6 @@
 from opint_framework.apps.example_app.nlp.pyspark_based.utils import *
 
+# TODO: clean from old summary/visualization utils
 def stats_summary(dataset, clust_col="prediction", tks_col="stop_token_1", abs_tks_out="abstract_message",
                   abstract=True):
     """Compute frequencies of unique messages aggregated per cluster.
@@ -94,6 +95,7 @@ def pattern_summary(dataset, clust_col="prediction", tks_col="stop_token_1", abs
     return (summary_table)
 
 
+# TODO: update saving with deal_with_save_path utils in all agg_* functions
 def agg_stats(dataset, save_path=None, clust_col='prediction', msg_col='t__error_message', pattern_col='pattern'):
     """Compute aggregate stats for each clust_col value, namely `cluster_size` (total errors in the cluster), `unique_strings`
      (total number of different strings) and `unique_patterns` (number of different strings after removal of parametric parts).

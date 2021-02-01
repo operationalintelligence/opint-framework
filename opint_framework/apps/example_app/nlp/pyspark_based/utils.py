@@ -149,3 +149,9 @@ def join_strings_to_path(base, end):
     if end is None:
         end = '.'
     return("{}/{}".format(base, end))
+
+def deal_with_save_path(save_path, outname, out_format):
+    save_path = Path(save_path)
+    save_path.mkdir(exist_ok=True, parents=True)
+    outname = save_path / f'{outname}{out_format}'
+    return(outname)
