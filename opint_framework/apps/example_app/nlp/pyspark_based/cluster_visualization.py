@@ -412,7 +412,7 @@ def plot_time(dataset, time_col, clust_col="prediction", k=None, save_path=None)
         converter = mdates.ConciseDateConverter()
         munits.registry[datetime.datetime] = converter
         fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(time_aggregate.index, time_aggregate.values, "o--b)
+        ax.plot(time_aggregate.index, time_aggregate.values, "o--b")
         min_h = time_aggregate.index.min()
         max_h = time_aggregate.index.max()
         day_min = str(min_h)[:10]

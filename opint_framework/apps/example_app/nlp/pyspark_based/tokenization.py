@@ -38,7 +38,7 @@ class pysparkTokenization(Tokenization):
         split_urls_udf = udf(split_urls, StringType())
 
         # split urls appropriately
-        test_data = dataset.select(id_col, err_col).withColumn("corrected_message", split_urls_udf(err_col))
+        test_data = dataset.withColumn("corrected_message", split_urls_udf(err_col))
 
         # split text into tokens
         tokenizer = Tokenizer(inputCol="corrected_message", outputCol="tokens")

@@ -74,16 +74,14 @@ class pysparkNLPAdapter(NLPAdapter):
 
         # filter test_errors only
         test_errors = all_transfers.filter(all_transfers["t_final_transfer_state_flag"] == 0)
+        # filter virtual organization if specified
         if self.context['vo'] is not None:
             test_errors = test_errors.filter(test_errors["vo"] == self.context['vo'])
 
-        # select only relevant variables
-        test_errors = test_errors.select(f"{self.context['id_col']}", "t__error_message", "src_hostname",
-                                         "dst_hostname", f"{self.context['timestamp_tr_x']}")
-
         # convert unix timestamp to datetime
-        from opint_framework.apps.example_app.nlp.pyspark_based.utils import convert_timestamp_to_datetime
+        from opint_framework.apps.example_app.nlp.pyspark_based.utils import convert_timestamp_to_datetime, convert_endpoint_to_site
         test_errors = convert_timestamp_to_datetime(test_errors)
+        test_errors = convert_endpoint_to_site(test_errors)
 
         # exclude Tiers 3
         if self.context['filter_T3']:
@@ -91,6 +89,22 @@ class pysparkNLPAdapter(NLPAdapter):
             test_errors = add_tier_level(test_errors)
             test_errors = test_errors.filter(~(test_errors.src_level.contains("T3")
                                               & test_errors.dst_level.contains("T3")))
+
+        # select only relevant variables
+        useful_columns = [f"{self.context['id_col']}", "t__error_message", "src_hostname", "src_rcsite",
+                          "dst_hostname", "dst_rcsite", "tr_datetime_complete", # "src_level", "dst_level",
+                          't_error_code', 't_failure_phase', 'tr_error_category', 'tr_error_scope']
+        additional_columns = ['activity', # 'dst_rse', 'dst_se', 'endpnt',
+                          'ipv6', 'is_recoverable', 'job_id', 'job_state',  # 'nstreams', 'operation_time',
+                          'protocol', 'retry', 'retry_max', # 'src_rse', 'src_se', 'srm_overhead_percentage',
+                          'srm_space_token_dst', 'srm_space_token_src',
+                          't_channel', 't_error_code', 't_failure_phase',
+                          't_final_transfer_state_flag', 'tr_error_category', 'tr_error_scope',
+                          'transfer_type', 'user', 'user_dn', 'vo']
+        self.context['additional_info'] = False
+        variable_list = useful_columns + additional_columns if self.context['additional_info'] else useful_columns
+
+        test_errors = test_errors.select(variable_list)
 
         # update context
         self.context['timestamp_tr_x'] = "tr_datetime_complete"
