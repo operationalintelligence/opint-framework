@@ -511,7 +511,7 @@ def plot_time(agg_data, save_path=None, clusters_list=None, clust_col='predictio
     fig.update_layout(
         title={'text': "time evolution".title(),'x': 0.5,'xanchor': 'center',
                'font': dict(family="Cambria", size=20,)},
-        xaxis_title="Time",
+        xaxis_title=f"Time ({str(agg_data.index[0].tzinfo)})",
         yaxis_title="N. errors / 15 mins",
         legend_title="Clusters",
         font=dict(
