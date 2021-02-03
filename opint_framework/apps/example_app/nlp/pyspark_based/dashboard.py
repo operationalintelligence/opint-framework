@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import datetime
 from pathlib import Path
 
 import dash
@@ -23,18 +22,20 @@ strings_pie = go.Figure(
 patterns_pie = go.Figure(
     go.Pie(labels=stats_view.prediction, values=stats_view.unique_patterns, name="Unique Patterns", hole=0.4))
 
+date_analysis = fig['data'][0]['x'][0].date()
 
 def makeTable(table):
     table.columns = [col.replace('_', ' ').title() for col in table.columns]
     return dbc.Table.from_dataframe(table, id='stats-view', striped=True, bordered=True, hover=True)
 
 
-def makeDonut(fig, vertical_height_pct=40):
+def makeDonut(fig, vertical_height_pct=45):
     name = fig['data'].__getitem__(0).name
     return dcc.Graph(
         id=f'{name.lower().replace(" ", "-")}-pie',
         figure=fig.update_layout(
-            title=name,
+            title={'text': name, 'x': 0.5, 'xanchor': 'center',
+                   'font': dict(family="Cambria", size=20, )},
             plot_bgcolor='rgba(0, 0, 0, 0)',
             paper_bgcolor='rgba(0, 0, 0, 0)'
         ), style={'height': f'{vertical_height_pct}vh'}
@@ -60,45 +61,44 @@ app.layout = html.Div([
     dbc.Card([
         dbc.Row([
             dbc.Col(
-                html.H1(
-                    f'FTS Failures on {datetime.datetime.now().date()}',
-                    style={'align': 'center'}),
-                width={'size': 8, 'offset': 1}),
+                html.H3(
+                    f'FTS Failures on {date_analysis}',
+                    className='d-flex justify-content-center',
+                    style={'font-family': 'cambria math', 'margin': '1%'}),
+                width={'size': 9, 'offset': 1}),
             dbc.Col(
-                dcc.Markdown('''###### for support contact [*luca.clissa2@unibo.it*][mailto:luca.clissa2@unibo.it]'''),
-                width={'size': 2, 'offset': 1, 'order': 'last'})
+                dcc.Markdown('''for support contact: [*luca.clissa2@unibo.it*](mailto:luca.clissa2@unibo.it)''',
+                             style={'font-size': '12px', 'margin-top': '5%', 'margin-right': '0px'}),
+                width={'size': 2})
         ])
-    ], style={"height": "10vh"}),
+    ], style={"height": "8vh"}),
 
     # First row
     dbc.Card([
         dbc.Row([
+            # Time evolution plot
             dbc.Col(
-                makeTimePlot(fig, 50),
+                makeTimePlot(fig),
                 width={'size': 6}),
+            # Numeric stats table
             dbc.Col(
                 makeTable(stats_view),
-                # dash_table.DataTable(
-                #         id='stats-view',
-                #         columns=[{"name": i.replace("_", " ").title(), "id": i} for i in stats_view.columns],
-                #         data=stats_view.to_dict('records'),
-                #     ),
                 width={"size": 4, 'offset': 1}, align='center'
             )
         ])
     ], style={'height': '50vh'}),
 
-    # Second row
+    # Second row: pie charts for cluster size, unique strings and unique patterns
     dbc.Card([
         dbc.Row([
             dbc.Col(
-                makeDonut(size_pie, 45)
+                makeDonut(size_pie)
             ),
             dbc.Col(
-                makeDonut(strings_pie, 45)
+                makeDonut(strings_pie)
             ),
             dbc.Col(
-                makeDonut(patterns_pie, 45)
+                makeDonut(patterns_pie)
             )
         ])
     ])
