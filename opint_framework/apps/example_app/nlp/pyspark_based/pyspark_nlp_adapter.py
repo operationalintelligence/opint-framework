@@ -162,6 +162,7 @@ class pysparkNLPAdapter(NLPAdapter):
                                           log_path=self.context['log_path'])
 
         k_sil = get_k_best(res, "silhouette")
+        k_sil_idx = self.context['k_list'].index(k_sil)
 
         # setup prediciton mode params
         if self.context['pred_mode'] == "update":
@@ -183,18 +184,21 @@ class pysparkNLPAdapter(NLPAdapter):
             best_k_log_path = None
 
         # transform data into clustering suitable format
-        vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
-
-        # train best K
-        print("\nTraining K-Means model for best value of K\n", "--" * 30, "\n")
-        kmeans_model = self.clusterization.train_model(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil,
-                                                       distance=self.context['distance'],
-                                                       initSteps=self.context['tr_initSteps'],
-                                                       tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
-                                                       path_to_model=kmeans_model_path, mode=save_mode,
-                                                       log_path=best_k_log_path)
+        # vector_data = self.clusterization.data_preparation(vector_data, self.context['tks_vec'])
+        #
+        # # train best K
+        # print("\nTraining K-Means model for best value of K\n", "--" * 30, "\n")
+        # kmeans_model = self.clusterization.train_model(messages=vector_data, ft_col=self.context['ft_col'], k=k_sil,
+        #                                                distance=self.context['distance'],
+        #                                                initSteps=self.context['tr_initSteps'],
+        #                                                tol=self.context['tr_tol'], maxIter=self.context['tr_maxIter'],
+        #                                                path_to_model=kmeans_model_path, mode=save_mode,
+        #                                                log_path=best_k_log_path)
         # uncache dataframe to free memory
         vector_data.persist()
+        # retrieve best model from grid search
+        kmeans_model = {"model": res['model'][k_sil_idx], "wsse": res['wsse'][k_sil_idx],
+                        "asw": res['silhouette'][k_sil_idx]}
 
         # add kmeans uid to context
         self.context['kmeans_uid'] = str(kmeans_model["model"])
