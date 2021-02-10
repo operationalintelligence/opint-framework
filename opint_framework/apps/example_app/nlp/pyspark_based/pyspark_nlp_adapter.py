@@ -194,7 +194,7 @@ class pysparkNLPAdapter(NLPAdapter):
                                                        path_to_model=kmeans_model_path, mode=save_mode,
                                                        log_path=best_k_log_path)
         # uncache dataframe to free memory
-        vector_data.cache()
+        vector_data.persist()
 
         # add kmeans uid to context
         self.context['kmeans_uid'] = str(kmeans_model["model"])
