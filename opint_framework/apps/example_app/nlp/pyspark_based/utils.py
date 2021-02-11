@@ -8,7 +8,7 @@ def convert_timestamp_to_datetime(df, tmstp_col="tr_timestamp_complete", dttm_co
     :param out_fmt: output datetim format
     :return: initial df with datetime column instead of timestamp
     """
-    from pyspark.sql.functions import udf, to_timestamp, to_utc_timestamp, date_format
+    from pyspark.sql.functions import udf, to_utc_timestamp, date_format
     import datetime
     import pytz
 
@@ -18,7 +18,7 @@ def convert_timestamp_to_datetime(df, tmstp_col="tr_timestamp_complete", dttm_co
 
     # apply this udf in the dataframe
     df = df.withColumn("datetime_str", get_timestamp(df[tmstp_col]))
-    df = df.withColumn(dttm_col, date_format(to_utc_timestamp(df['datetime_str'], out_fmt), out_fmt))
+    df = df.withColumn(dttm_col, date_format(to_utc_timestamp(df['datetime_str'], 'UTC'), out_fmt))
     out_cols = df.columns
     out_cols.remove('datetime_str')
     df = df.select(out_cols)
