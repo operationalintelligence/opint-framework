@@ -119,7 +119,7 @@ class pysparkNLPAdapter(NLPAdapter):
         self.context['dataset'] = test_errors
 
         # uncache dataframe to free memory
-        test_errors.persist()
+        test_errors.unpersist()
 
     def run(self):
         from opint_framework.apps.example_app.nlp.pyspark_based.kmeans import get_k_best
@@ -150,7 +150,7 @@ class pysparkNLPAdapter(NLPAdapter):
         self.context['w2v_uid'] = str(w2v_model)
 
         # substitute cached dataframe to speed-up processing
-        token_data.persist()
+        token_data.unpersist()
         vector_data.cache()
 
         # K value optimization
@@ -195,7 +195,7 @@ class pysparkNLPAdapter(NLPAdapter):
         #                                                path_to_model=kmeans_model_path, mode=save_mode,
         #                                                log_path=best_k_log_path)
         # uncache dataframe to free memory
-        vector_data.persist()
+        vector_data.unpersist()
         # retrieve best model from grid search
         kmeans_model = {"model": res['model'][k_sil_idx], "wsse": res['wsse'][k_sil_idx],
                         "asw": res['silhouette'][k_sil_idx]}
